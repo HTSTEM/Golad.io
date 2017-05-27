@@ -349,7 +349,7 @@ $().ready(function () {
 
     gridTiles = [];
 
-    for (var y = 0; y < GRID_HEIGHT; y++) {
+    for (var y = 0; y < GRID_HEIGHT / 2; y++) {
         gridTiles.push([]);
 
         for (var x = 0; x < GRID_WIDTH; x++) {
@@ -363,6 +363,21 @@ $().ready(function () {
                 val = 0;
 
             gridTiles[y].push({currentState: val, nextState: 0});
+        }
+    }
+    for (y = 0; y < GRID_WIDTH / 2; y ++) { gridTiles.push([]); }
+
+    for (y = 0; y < GRID_HEIGHT / 2; y++) {
+        for (x = 0; x < GRID_WIDTH; x++) {
+            if (gridTiles[y][GRID_WIDTH - x - 1].currentState == 2)
+                val = 1;
+            else if (gridTiles[y][GRID_WIDTH - x - 1].currentState == 1)
+                val = 2;
+            else
+                val = 0;
+
+            console.log((GRID_HEIGHT / 2 + (GRID_HEIGHT / 2 - y - 1)));
+            gridTiles[GRID_HEIGHT / 2 + (GRID_HEIGHT / 2 - y - 1)].push({currentState: val, nextState: 0});
         }
     }
 
