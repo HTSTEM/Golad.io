@@ -242,7 +242,7 @@ function redrawTile(x, y) {
     ctx.fillRect(xOff + x * (tileSize + TILE_PADDING) + 3,
         yOff + y * (tileSize + TILE_PADDING) + ((tileSize - 3) / 6 * 5),
         tileSize - 6,
-        (tileSize - 6) / 6);
+        (tileSize - 3) / 6);
 
     switch (gridTiles[x][y].nextState) {
         case 0:
@@ -255,10 +255,10 @@ function redrawTile(x, y) {
             ctx.fillStyle = BLUE;
             break;
     }
-    ctx.fillRect(xOff + x * (tileSize + TILE_PADDING) + (tileSize / 3) + 2,
-        yOff + y * (tileSize + TILE_PADDING) + (tileSize / 3) + 2,
-        tileSize / 3 - 4,
-        tileSize / 3 - 4);
+    ctx.fillRect(xOff + x * (tileSize + TILE_PADDING) + (tileSize / 3) + 1,
+        yOff + y * (tileSize + TILE_PADDING) + (tileSize / 3) + 1,
+        tileSize / 3 - 2,
+        tileSize / 3 - 2);
 
     if (renderNeighbours) {
         textOntoTile(x, y, getNeighbours(x, y));
