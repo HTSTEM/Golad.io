@@ -3,14 +3,16 @@
  0: Dead
  1: Red
  2: Blue
+ 3: Half-created red
+ 4: Half-created red
  */
 
 var GRID_WIDTH = 20;
 var GRID_HEIGHT = 20;
 var TILE_PADDING = 0;
-var RED = "#D55336";
+var RED = "#D55336"; // "#fd0000"; // "#4fbedc";
 var DARK_RED = "#AB422B";
-var BLUE = "#30A7C2";
+var BLUE = "#30A7C2"; // "#0266fc"; // "#ea5a4f";
 var DARK_BLUE = "#26869B";
 var GREY = "#333333";
 var BLACK = "#222222";
@@ -25,7 +27,17 @@ var ctx;
 var mouseDown = false;
 var renderNeighbours = false;
 var changedThisDrag = [];
+
 var currentPlayer = 1;
+var moveStarted = false;
+var moveFinished = false;
+var creationTile = [];
+var stolenTiles = [];
+
+var tileSizePerc = 100;
+var tileSizePercGrow = 5;
+var tileSizePercSpeed = 10;
+var changedTiles = [];
 
 function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
     if (typeof stroke == 'undefined') {
@@ -109,7 +121,10 @@ function checkNextStates() {
                 gridTiles[x][y].nextState = 0;
             }
             if (gridTiles[x][y].currentState != 0 && (n == 2 || n == 3)) {
-                gridTiles[x][y].nextState = gridTiles[x][y].currentState;
+                if (gridTiles[x][y].currentState <= 2)
+                    gridTiles[x][y].nextState = gridTiles[x][y].currentState;
+                else
+                    gridTiles[x][y].nextState = gridTiles[x][y].currentState - 2;
             }
             if (gridTiles[x][y].currentState == 0 && n == 3) {
                 var rn = getRedNeighbours(x, y);
@@ -126,24 +141,28 @@ function checkNextStates() {
 }
 
 function gameOfLifeTick() {
+    moveStarted = false;
+    moveFinished = false;
+    stolenTiles = [];
+    creationTile = [];
+
     checkNextStates();
 
-    var changed = [];
+    changedTiles = [];
 
     for (var x = 0; x < GRID_WIDTH; x++) {
         for (var y = 0; y < GRID_HEIGHT; y++) {
             if (gridTiles[x][y].currentState != gridTiles[x][y].nextState) {
                 gridTiles[x][y].currentState = gridTiles[x][y].nextState;
-                changed.push({x:x, y:y});
+                changedTiles.push({x:x, y:y});
             }
         }
     }
 
     checkNextStates();
 
-    for (var i = 0; i < changed.length; i++) {
-        redrawTile(changed[i].x, changed[i].y);
-    }
+    tileSizePerc = 0;
+    growTiles();
 }
 
 function getNeighbours(x, y) {
@@ -171,7 +190,7 @@ function getRedNeighbours(x, y) {
         for (var dy = -1; dy < 2; dy++) {
             if (x + dx >= 0 && x + dx < GRID_WIDTH && y + dy >= 0 && y + dy < GRID_HEIGHT) {
                 if (!(dx == 0 && dy == 0)) {
-                    if (gridTiles[x + dx][y + dy].currentState == 1) {
+                    if (gridTiles[x + dx][y + dy].currentState == 1 || gridTiles[x + dx][y + dy].currentState == 3) {
                         redNeighbours += 1;
                     }
                 }
@@ -211,54 +230,156 @@ function refreshTile(x, y) {
 }
 
 function redrawTile(x, y) {
-    switch (gridTiles[x][y].currentState) {
-        case 0:
-            ctx.fillStyle = GREY;
-            break;
-        case 1:
-            ctx.fillStyle = RED;
-            break;
-        case 2:
-            ctx.fillStyle = BLUE;
-            break;
+    var margins = 3;
+    if (Math.min(canvas.width, canvas.height) <= 500) {
+        margins = 2;
+    }
+    if (Math.min(canvas.width, canvas.height) <= 400) {
+        margins = 1;
     }
 
-    ctx.fillRect(xOff + x * (tileSize + TILE_PADDING) + 3,
-        yOff + y * (tileSize + TILE_PADDING) + 3,
-        tileSize - 6,
-        tileSize - 6);
+    var x_abs;
+    var y_abs;
+    var size;
 
-    switch (gridTiles[x][y].currentState) {
-        case 0:
-            ctx.fillStyle = GREY;
-            break;
-        case 1:
-            ctx.fillStyle = DARK_RED;
-            break;
-        case 2:
-            ctx.fillStyle = DARK_BLUE;
-            break;
-    }
-    ctx.fillRect(xOff + x * (tileSize + TILE_PADDING) + 3,
-        yOff + y * (tileSize + TILE_PADDING) + ((tileSize - 3) / 6 * 5),
-        tileSize - 6,
-        (tileSize - 3) / 6);
+    if (gridTiles[x][y].currentState <= 2) {
+        switch (gridTiles[x][y].currentState) {
+            case 0:
+                ctx.fillStyle = GREY;
+                break;
+            case 1:
+                ctx.fillStyle = RED;
+                break;
+            case 2:
+                ctx.fillStyle = BLUE;
+                break;
+        }
 
-    switch (gridTiles[x][y].nextState) {
-        case 0:
-            ctx.fillStyle = GREY;
-            break;
-        case 1:
-            ctx.fillStyle = RED;
-            break;
-        case 2:
-            ctx.fillStyle = BLUE;
-            break;
+        x_abs = xOff + x * (tileSize + TILE_PADDING) + margins + ((tileSize - margins * 2) / 100) * (100 - tileSizePerc) / 2;
+        y_abs = yOff + y * (tileSize + TILE_PADDING) + margins + ((tileSize - margins * 2) / 100) * (100 - tileSizePerc) / 2;
+        size = ((tileSize - margins * 2) / 100) * tileSizePerc;
+
+        ctx.fillRect(x_abs,
+            y_abs,
+            size,
+            size);
+
+        switch (gridTiles[x][y].nextState) {
+            case 0:
+                ctx.fillStyle = GREY;
+                break;
+            case 1:
+                ctx.fillStyle = RED;
+                break;
+            case 2:
+                ctx.fillStyle = BLUE;
+                break;
+        }
+
+        x_abs = xOff + x * (tileSize + TILE_PADDING) + (tileSize / 3) + 1 + ((tileSize / 3 - 2) / 100) * (100 - tileSizePerc) / 2;
+        y_abs = yOff + y * (tileSize + TILE_PADDING) + (tileSize / 3) + 1 + ((tileSize / 3 - 2) / 100) * (100 - tileSizePerc) / 2;
+        size = ((tileSize / 3 - 2) / 100) * tileSizePerc;
+
+        ctx.fillRect(x_abs,
+            y_abs,
+            size,
+            size);
+    } else {
+        switch (gridTiles[x][y].currentState) {
+            case 3:
+                ctx.fillStyle = RED;
+                break;
+            case 4:
+                ctx.fillStyle = BLUE;
+                break;
+        }
+
+        x_abs = xOff + x * (tileSize + TILE_PADDING) + margins;
+        y_abs = yOff + y * (tileSize + TILE_PADDING) + margins;
+        size = tileSize - margins * 2;
+
+        ctx.fillRect(x_abs,
+            y_abs,
+            size,
+            size);
+
+        ctx.fillStyle = GREY;
+
+        x_abs = xOff + x * (tileSize + TILE_PADDING) + margins + 3;
+        y_abs = yOff + y * (tileSize + TILE_PADDING) + margins + 3;
+        size = tileSize - margins * 2 - 6;
+
+        ctx.fillRect(x_abs,
+            y_abs,
+            size,
+            size);
+
+        switch (gridTiles[x][y].currentState) {
+            case 3:
+                ctx.fillStyle = RED;
+                break;
+            case 4:
+                ctx.fillStyle = BLUE;
+                break;
+        }
+
+        size = tileSize - margins * 2;
+        x_abs = (xOff + x * (tileSize + TILE_PADDING) + margins) + (size / 2) - 2;
+        y_abs = yOff + y * (tileSize + TILE_PADDING) + margins;
+        var width = 4;
+
+        ctx.fillRect(x_abs,
+            y_abs,
+            width,
+            size);
+
+        if (stolenTiles.length > 0) {
+            size = tileSize - margins * 2 - 6;
+            x_abs = xOff + x * (tileSize + TILE_PADDING) + margins + 3;
+            y_abs = yOff + y * (tileSize + TILE_PADDING) + margins + 3;
+            width = size / 2 - 2;
+
+            ctx.fillRect(x_abs,
+                y_abs,
+                width,
+                size);
+        }
+        if (stolenTiles.length > 1) {
+            size = tileSize - margins * 2 - 6;
+            x_abs = xOff + x * (tileSize + TILE_PADDING) + margins + 5 + size / 2;
+            y_abs = yOff + y * (tileSize + TILE_PADDING) + margins + 3;
+            width = size / 2 - 2;
+
+            ctx.fillRect(x_abs,
+                y_abs,
+                width,
+                size);
+        }
+
+
+
+        switch (gridTiles[x][y].nextState) {
+            case 0:
+                ctx.fillStyle = GREY;
+                break;
+            case 1:
+                ctx.fillStyle = RED;
+                break;
+            case 2:
+                ctx.fillStyle = BLUE;
+                break;
+        }
+
+        x_abs = xOff + x * (tileSize + TILE_PADDING) + (tileSize / 3) + 1;
+        y_abs = yOff + y * (tileSize + TILE_PADDING) + (tileSize / 3) + 1;
+        size = (tileSize / 3 - 2);
+
+        ctx.fillRect(x_abs,
+            y_abs,
+            size,
+            size);
     }
-    ctx.fillRect(xOff + x * (tileSize + TILE_PADDING) + (tileSize / 3) + 1,
-        yOff + y * (tileSize + TILE_PADDING) + (tileSize / 3) + 1,
-        tileSize / 3 - 2,
-        tileSize / 3 - 2);
+
 
     if (renderNeighbours) {
         textOntoTile(x, y, getNeighbours(x, y));
@@ -276,23 +397,110 @@ function containsObject(obj, list) {
     return false;
 }
 
-function mouseChangeMove () {
+function mouseChangeMove (event) {
     for (var y = 0; y < GRID_HEIGHT; y++) {
         for (var x = 0; x < GRID_WIDTH; x++) {
             if (!(containsObject({x:x, y:y}, changedThisDrag))) {
                 var rect = [xOff + x * (tileSize + TILE_PADDING), yOff + y * (tileSize + TILE_PADDING), tileSize, tileSize];
-                if (event.offsetX > rect[0] && event.offsetX < rect[0] + rect[2]) {
-                    if (event.offsetY > rect[1] && event.offsetY < rect[1] + rect[3]) {
-                        gridTiles[x][y].currentState ++;
-                        if (gridTiles[x][y].currentState == 3)
+
+                if (event.pageX > rect[0] && event.pageX < rect[0] + rect[2]) {
+                    if (event.pageY > rect[1] && event.pageY < rect[1] + rect[3]) {
+                        var otherPlayer;
+                        var i;
+                        if (currentPlayer == 1)
+                            otherPlayer = 2;
+                        else
+                            otherPlayer = 1;
+
+                        if ((gridTiles[x][y].currentState == currentPlayer || gridTiles[x][y].currentState == otherPlayer) && !moveStarted) {
                             gridTiles[x][y].currentState = 0;
-                        changedThisDrag.push({x:x, y:y});
+                            moveStarted = true;
+                            moveFinished = true;
+                            creationTile = x + "," + y;
+                        }
+                        else if (gridTiles[x][y].currentState == 0 && creationTile == "[" + x + "," + y + "]" && moveFinished) {
+                            gridTiles[x][y].currentState = currentPlayer;
+                            for (i = 0; i < stolenTiles.length; i ++) {
+                                gridTiles[stolenTiles[i][0]][stolenTiles[i][1]].currentState = currentPlayer;
+                            }
+                            stolenTiles = [];
+                            moveStarted = false;
+                            moveFinished = false;
+                            creationTile = null;
+                        }
+                        else if (gridTiles[x][y].currentState == 0 && stolenTiles.includes("[" + x + "," + y + "]")) {
+                            gridTiles[x][y].currentState = currentPlayer;
+                            stolenTiles.splice(stolenTiles.indexOf("[" + x + "," + y + "]"), 1);
+                            moveStarted = true;
+                            moveFinished = false;
+                        }
+                        else if (gridTiles[x][y].currentState == currentPlayer + 2) {
+                            gridTiles[x][y].currentState = 0;
+                            for (i = 0; i < stolenTiles.length; i ++) {
+                                gridTiles[eval(stolenTiles[i])[0]][eval(stolenTiles[i])[1]].currentState = currentPlayer;
+                            }
+                            stolenTiles = [];
+                            moveStarted = false;
+                            moveFinished = false;
+                            creationTile = null;
+                        }
+                        else if (gridTiles[x][y].currentState != otherPlayer && !moveStarted) {
+                            gridTiles[x][y].currentState = currentPlayer + 2;
+                            moveStarted = true;
+                            moveFinished = false;
+                            creationTile = "[" + x + "," + y + "]";
+                        }
+                        else if (gridTiles[x][y].currentState == currentPlayer && moveStarted && !moveFinished) {
+                            gridTiles[x][y].currentState = 0;
+                            stolenTiles.push("[" + x + "," + y + "]");
+                            if (stolenTiles.length >= 2) {
+                                moveFinished = true;
+                            }
+                        }
+
+                        checkNextStates();
+                        changedTiles = [];
+                        for (var x_ = 0; x_ < GRID_WIDTH; x_++) {
+                            for (var y_ = 0; y_ < GRID_HEIGHT; y_++) {
+                                if (gridTiles[x_][y_].currentState != gridTiles[x_][y_].nextState) {
+                                    changedTiles.push({x:x_, y:y_});
+                                }
+                            }
+                        }
                         refreshTile(x, y);
+                        checkNextStates();
+
+                        for (i = 0; i < changedTiles.length; i++) {
+                            redrawTile(changedTiles[i].x, changedTiles[i].y);
+                        }
                         return;
                     }
                 }
             }
         }
+    }
+}
+
+function growTiles() {
+    if (tileSizePerc < 100) {
+        tileSizePerc += tileSizePercGrow;
+
+        if (tileSizePerc > 100) {
+            tileSizePerc = 100;
+        }
+
+        var st = performance.now();
+        for (var i = 0; i < changedTiles.length; i++) {
+            refreshTile(changedTiles[i].x, changedTiles[i].y);
+            redrawTile(changedTiles[i].x, changedTiles[i].y);
+        }
+        var dt = performance.now() - st;
+
+        if (tileSizePerc < 100) {
+            setTimeout(growTiles, tileSizePercSpeed - dt)
+        }
+
+
     }
 }
 
@@ -315,23 +523,14 @@ $(window).resize(function () {
 
 $(window).mousedown(function (event) {
     //mouseDown = true;
-    changedThisDrag = [];
-
-    mouseChangeMove();
-});
-
-$(window).mouseup(function (event) {
-    mouseDown = false;
-});
-
-$(window).mousemove(function (event) {
-    if (mouseDown) {
-        mouseChangeMove();
-    }
+    mouseChangeMove(event);
 });
 
 $(window).keydown(function () {
-    gameOfLifeTick();
+    if (tileSizePerc == 100 && moveFinished) {
+
+        gameOfLifeTick();
+    }
 });
 
 $().ready(function () {
@@ -376,7 +575,6 @@ $().ready(function () {
             else
                 val = 0;
 
-            console.log((GRID_HEIGHT / 2 + (GRID_HEIGHT / 2 - y - 1)));
             gridTiles[GRID_HEIGHT / 2 + (GRID_HEIGHT / 2 - y - 1)].push({currentState: val, nextState: 0});
         }
     }

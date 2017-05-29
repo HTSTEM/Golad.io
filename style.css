@@ -12,39 +12,51 @@ html, body {
 }
 
 #mainGame {
-    width: 75%;
+    width: 60%;
     height: 100%;
 
     float: left;
 }
 #sidebar {
     float: right;
-    width: 25%;
+    width: 40%;
     height: 100%;
 }
 #player1 {
     background-color: #D55336;
     width: 100%;
-    height: 30%;
+    height: 25%;
     color: #FFF;
 }
 #player2 {
     background-color: #30A7C2;
     width: 100%;
-    height: 30%;
+    height: 25%;
+}
+#player1-count {
+    position: absolute;
+    right: 0;
+    bottom: 75%;
+    line-height: 1em;
+}
+.tile {
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    background-color: rgba(0, 0, 0, 0.5);
 }
 #controls {
     background-color: #84898c;
     width: 100%;
-    height: 40%;
+    height: 50%;
 }
 #player1-type {
     position: absolute;
-    bottom: 70%;
+    bottom: 75%;
 }
 #player2-type {
     position: absolute;
-    bottom: 40%;
+    bottom: 50%;
 }
 
 @media (orientation: portrait) {
