@@ -146,6 +146,11 @@ function gameOfLifeTick() {
     stolenTiles = [];
     creationTile = [];
 
+    if (currentPlayer == 1)
+        currentPlayer = 2;
+    else
+        currentPlayer = 1;
+
     checkNextStates();
 
     changedTiles = [];
@@ -416,7 +421,7 @@ function mouseChangeMove (event) {
                             gridTiles[x][y].currentState = 0;
                             moveStarted = true;
                             moveFinished = true;
-                            creationTile = x + "," + y;
+                            creationTile = "[" + x + "," + y + "]";
                         }
                         else if (gridTiles[x][y].currentState == 0 && creationTile == "[" + x + "," + y + "]" && moveFinished) {
                             gridTiles[x][y].currentState = currentPlayer;
@@ -528,7 +533,6 @@ $(window).mousedown(function (event) {
 
 $(window).keydown(function () {
     if (tileSizePerc == 100 && moveFinished) {
-
         gameOfLifeTick();
     }
 });
