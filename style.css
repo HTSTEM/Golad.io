@@ -39,6 +39,12 @@ html, body {
     bottom: 75%;
     line-height: 1em;
 }
+#player2-count {
+    position: absolute;
+    right: 0;
+    bottom: 50%;
+    line-height: 1em;
+}
 .tile {
     width: 1em;
     height: 1em;
@@ -58,6 +64,7 @@ html, body {
     position: absolute;
     bottom: 50%;
 }
+
 
 @media (orientation: portrait) {
     #sidebar {
@@ -107,6 +114,15 @@ html, body {
     }
     #player2-type {
         bottom: 0;
+    }
+
+    #player1-count {
+        left: 0;
+        top: 1.5em;
+    }
+    #player2-count {
+        left: 0;
+        top: 1.5em;
     }
 }
 

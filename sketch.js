@@ -33,6 +33,7 @@ var moveStarted = false;
 var moveFinished = false;
 var creationTile = [];
 var stolenTiles = [];
+var origCol = 0;
 
 var tileSizePerc = 100;
 var tileSizePercGrow = 5;
@@ -112,6 +113,10 @@ function drawAll() {
 }
 
 function checkNextStates() {
+    var counts = getCellsCount();
+    $("#player1-count").html("&#x25FC&#xd7 " + counts.red);
+    $("#player2-count").html("&#x25FC&#xd7 " + counts.blue);
+
     for (var x = 0; x < GRID_WIDTH; x++) {
         for (var y = 0; y < GRID_HEIGHT; y++) {
             var n = getNeighbours(x, y);
@@ -145,6 +150,7 @@ function gameOfLifeTick() {
     moveFinished = false;
     stolenTiles = [];
     creationTile = [];
+    origCol = 0;
 
     if (currentPlayer == 1)
         currentPlayer = 2;
@@ -418,13 +424,15 @@ function mouseChangeMove (event) {
                             otherPlayer = 1;
 
                         if ((gridTiles[x][y].currentState == currentPlayer || gridTiles[x][y].currentState == otherPlayer) && !moveStarted) {
+                            origCol = gridTiles[x][y].currentState;
                             gridTiles[x][y].currentState = 0;
                             moveStarted = true;
                             moveFinished = true;
                             creationTile = "[" + x + "," + y + "]";
                         }
                         else if (gridTiles[x][y].currentState == 0 && creationTile == "[" + x + "," + y + "]" && moveFinished) {
-                            gridTiles[x][y].currentState = currentPlayer;
+                            gridTiles[x][y].currentState = origCol;
+                            origCol = 0;
                             for (i = 0; i < stolenTiles.length; i ++) {
                                 gridTiles[stolenTiles[i][0]][stolenTiles[i][1]].currentState = currentPlayer;
                             }
@@ -434,12 +442,14 @@ function mouseChangeMove (event) {
                             creationTile = null;
                         }
                         else if (gridTiles[x][y].currentState == 0 && stolenTiles.includes("[" + x + "," + y + "]")) {
-                            gridTiles[x][y].currentState = currentPlayer;
+                            gridTiles[x][y].currentState = origCol;
+                            origCol = 0;
                             stolenTiles.splice(stolenTiles.indexOf("[" + x + "," + y + "]"), 1);
                             moveStarted = true;
                             moveFinished = false;
                         }
                         else if (gridTiles[x][y].currentState == currentPlayer + 2) {
+                            origCol = gridTiles[x][y].currentState;
                             gridTiles[x][y].currentState = 0;
                             for (i = 0; i < stolenTiles.length; i ++) {
                                 gridTiles[eval(stolenTiles[i])[0]][eval(stolenTiles[i])[1]].currentState = currentPlayer;
@@ -456,6 +466,7 @@ function mouseChangeMove (event) {
                             creationTile = "[" + x + "," + y + "]";
                         }
                         else if (gridTiles[x][y].currentState == currentPlayer && moveStarted && !moveFinished) {
+                            origCol = gridTiles[x][y].currentState;
                             gridTiles[x][y].currentState = 0;
                             stolenTiles.push("[" + x + "," + y + "]");
                             if (stolenTiles.length >= 2) {
