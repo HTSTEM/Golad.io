@@ -88,6 +88,7 @@ html, body {
 
     border-radius: 2px;
     margin: 1px;
+    position: relative;
 }
 #player2 {
     float: right;
@@ -98,6 +99,7 @@ html, body {
 
     border-radius: 2px;
     margin: 1px;
+    position: relative;
 }
 #controls {
     float: right;
@@ -138,6 +140,28 @@ html, body {
     border-radius: 3px;
     height: 25%;
     text-align: center;
+}
+.locked {
+    background-color: #a6a6a6;
+    color: #555;
+}
+#player1-type {
+    display: inline-block;
+    position: absolute;
+    bottom: 0;
+}
+#player2-type {
+    display: inline-block;
+    position: absolute;
+    bottom: 0;
+}
+#player1-count {
+    float: right;
+    margin-right: 5px;
+}
+#player2-count {
+    float: right;
+    margin-right: 5px;
 }
 
 @media (orientation: portrait) {
