@@ -18,13 +18,17 @@ var GREY = "#262626"; //"#333333";
 var BLACK = "#000000"; //"#222222";
 var FANCY_MIDDLE = true;
 
+var BIRTH_COUNT = [3];
+var STAY_COUNT = [2, 3];
+var GAME_STRING = "B" + BIRTH_COUNT.join("") + "/" + "S" + STAY_COUNT.join("");
+
 var canvas;
 var gridTiles;
 var tileSize;
 var xOff;
 var yOff;
 var ctx;
-var mouseDown = false;
+
 var renderNeighbours = false;
 var changedThisDrag = [];
 
@@ -34,6 +38,9 @@ var moveFinished = false;
 var creationTile = [];
 var stolenTiles = [];
 var origCol = 0;
+var currentMove = "A";
+
+var turnNumber = 1;
 
 var tileSizePerc = 100;
 var tileSizePercGrow = 5;
@@ -86,6 +93,8 @@ function textOntoTile(x, y, text) {
 }
 
 function drawAll() {
+    $("#ruleset").text(GAME_STRING);
+
     ctx.fillStyle = BLACK;
     ctx.fillRect(
         0,
@@ -120,37 +129,37 @@ function checkNextStates() {
     for (var x = 0; x < GRID_WIDTH; x++) {
         for (var y = 0; y < GRID_HEIGHT; y++) {
             var n = getNeighbours(x, y);
-            if (n < 2) {
-                gridTiles[x][y].nextState = 0;
-            } else if (n > 3) {
-                gridTiles[x][y].nextState = 0;
-            }
-            if (gridTiles[x][y].currentState != 0 && (n == 2 || n == 3)) {
-                if (gridTiles[x][y].currentState <= 2)
-                    gridTiles[x][y].nextState = gridTiles[x][y].currentState;
-                else
-                    gridTiles[x][y].nextState = gridTiles[x][y].currentState - 2;
-            }
-            if (gridTiles[x][y].currentState == 0 && n == 3) {
+
+            if (BIRTH_COUNT.includes(n) && gridTiles[x][y].currentState == 0) {
                 var rn = getRedNeighbours(x, y);
                 if (n - rn < rn)
                     gridTiles[x][y].nextState = 1;
                 else
                     gridTiles[x][y].nextState = 2;
             }
-            if (gridTiles[x][y].currentState == 0 && n == 2) {
+            else if (!(STAY_COUNT.includes(n))) {
                 gridTiles[x][y].nextState = 0;
             }
+            else {
+                gridTiles[x][y].nextState = gridTiles[x][y].currentState
+            }
+
         }
     }
 }
 
 function gameOfLifeTick() {
+    if (currentPlayer == 2) {
+        turnNumber++;
+    }
+
     moveStarted = false;
     moveFinished = false;
     stolenTiles = [];
     creationTile = [];
     origCol = 0;
+    currentMove = "A";
+    $("#turn").text(turnNumber + "A / " + turnNumber + "A");
 
     if (currentPlayer == 1)
         currentPlayer = 2;
@@ -428,6 +437,7 @@ function mouseChangeMove (event) {
                             gridTiles[x][y].currentState = 0;
                             moveStarted = true;
                             moveFinished = true;
+                            currentMove = "B";
                             creationTile = "[" + x + "," + y + "]";
                         }
                         else if (gridTiles[x][y].currentState == 0 && creationTile == "[" + x + "," + y + "]" && moveFinished) {
@@ -439,12 +449,17 @@ function mouseChangeMove (event) {
                             stolenTiles = [];
                             moveStarted = false;
                             moveFinished = false;
+                            currentMove = "A";
                             creationTile = null;
                         }
                         else if (gridTiles[x][y].currentState == 0 && stolenTiles.includes("[" + x + "," + y + "]")) {
                             gridTiles[x][y].currentState = origCol;
                             origCol = 0;
                             stolenTiles.splice(stolenTiles.indexOf("[" + x + "," + y + "]"), 1);
+                            if (currentMove == "D")
+                                currentMove = "C";
+                            else if (currentMove == "C")
+                                currentMove = "B";
                             moveStarted = true;
                             moveFinished = false;
                         }
@@ -457,25 +472,37 @@ function mouseChangeMove (event) {
                             stolenTiles = [];
                             moveStarted = false;
                             moveFinished = false;
+                            currentMove = "A";
                             creationTile = null;
                         }
                         else if (gridTiles[x][y].currentState != otherPlayer && !moveStarted) {
                             gridTiles[x][y].currentState = currentPlayer + 2;
                             moveStarted = true;
                             moveFinished = false;
+                            currentMove = "B";
                             creationTile = "[" + x + "," + y + "]";
                         }
                         else if (gridTiles[x][y].currentState == currentPlayer && moveStarted && !moveFinished) {
                             origCol = gridTiles[x][y].currentState;
                             gridTiles[x][y].currentState = 0;
                             stolenTiles.push("[" + x + "," + y + "]");
+                            currentMove = "C";
                             if (stolenTiles.length >= 2) {
+                                currentMove = "D";
                                 moveFinished = true;
                             }
                         }
 
+                        var turn = $("#turn");
+                        if (currentPlayer == 1)
+                            turn.text(turnNumber + currentMove + " / " + turnNumber + "A");
+                        else
+                            turn.text(turnNumber + "A / " + turnNumber + currentMove);
+
                         checkNextStates();
-                        changedTiles = [];
+                        checkNextStates();
+                        drawAll();
+                        /*changedTiles = [];
                         for (var x_ = 0; x_ < GRID_WIDTH; x_++) {
                             for (var y_ = 0; y_ < GRID_HEIGHT; y_++) {
                                 if (gridTiles[x_][y_].currentState != gridTiles[x_][y_].nextState) {
@@ -488,7 +515,7 @@ function mouseChangeMove (event) {
 
                         for (i = 0; i < changedTiles.length; i++) {
                             redrawTile(changedTiles[i].x, changedTiles[i].y);
-                        }
+                        }*/
                         return;
                     }
                 }

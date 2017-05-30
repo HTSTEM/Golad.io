@@ -157,11 +157,15 @@ html, body {
 }
 #player1-count {
     float: right;
-    margin-right: 5px;
+    position: absolute;
+    bottom: 0;
+    right: 3px;
 }
 #player2-count {
     float: right;
-    margin-right: 5px;
+    position: absolute;
+    bottom: 0;
+    right: 3px;
 }
 
 @media (orientation: portrait) {
