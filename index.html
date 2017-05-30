@@ -9,16 +9,39 @@
         <div id="mainGame">
             <canvas id="gameCanvas"></canvas>
         </div>
-        <div id="sidebar">
-            <div id="player1">Player 1
-                <div id="player1-type">Human</div>
-                <div id="player1-count">&#x25FC&#xd7 0</div>
+
+        <div id="hud">
+            <div id="tophalf">
+                <div id="ruleset">B2/S23</div>
+                <div id="player1">Player 1
+                    <div id="player1-type">Human</div>
+                    <div id="player1-count">&#x25FC&#xd7 0</div>
+                </div>
+                <div id="player2">Player 2
+                    <div id="player2-type">Human</div>
+                    <div id="player2-count">&#x25FC&#xd7 0</div>
+                </div>
             </div>
-            <div id="player2">Player 2
-                <div id="player2-type">Human</div>
-                <div id="player2-count">&#x25FC&#xd7 0</div>
+
+            <div id="controls">
+                <table id="controls-inner">
+                    <tr>
+                        <td colspan="3" id="instructions">
+                            Tap a living cell to kill it,<br>
+                            or tap a dead cell to birth it.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" id="turn">6A / 6B</td>
+                        <td id="end" class="button">End...</td>
+                    </tr>
+                    <tr>
+                        <td class="button">Undo</td>
+                        <td class="button">Redo</td>
+                        <td class="button">Menu</td>
+                    </tr>
+                </table>
             </div>
-            <div id="controls">Buttons!!!</div>
         </div>
 
         <script src="vendor/jquery-3.2.1.min.js"></script>

@@ -10,12 +10,12 @@
 var GRID_WIDTH = 20;
 var GRID_HEIGHT = 20;
 var TILE_PADDING = 0;
-var RED = "#D55336"; // "#fd0000"; // "#4fbedc";
+var RED = "#ff0000"; //"#D55336";
 var DARK_RED = "#AB422B";
-var BLUE = "#30A7C2"; // "#0266fc"; // "#ea5a4f";
+var BLUE = "#0066ff"; //"#30A7C2";
 var DARK_BLUE = "#26869B";
-var GREY = "#333333";
-var BLACK = "#222222";
+var GREY = "#262626"; //"#333333";
+var BLACK = "#000000"; //"#222222";
 var FANCY_MIDDLE = true;
 
 var canvas;
