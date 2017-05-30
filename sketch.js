@@ -170,6 +170,14 @@ function gameOfLifeTick() {
     else
         currentPlayer = 1;
 
+    if (currentPlayer == 1) {
+        $("#player1").addClass("blink");
+        $("#player2").removeClass("blink");
+    } else {
+        $("#player1").removeClass("blink");
+        $("#player2").addClass("blink");
+    }
+
     checkNextStates();
 
     changedTiles = [];
@@ -510,6 +518,13 @@ function mouseChangeMove (event) {
                             $("#end").removeClass("locked");
                         else
                             $("#end").addClass("locked");
+                        if (currentPlayer == 1) {
+                            $("#player1").addClass("blink");
+                            $("#player2").removeClass("blink");
+                        } else {
+                            $("#player1").removeClass("blink");
+                            $("#player2").addClass("blink");
+                        }
                         /*changedTiles = [];
                         for (var x_ = 0; x_ < GRID_WIDTH; x_++) {
                             for (var y_ = 0; y_ < GRID_HEIGHT; y_++) {
@@ -632,6 +647,14 @@ $().ready(function () {
 
             gridTiles[GRID_HEIGHT / 2 + (GRID_HEIGHT / 2 - y - 1)].push({currentState: val, nextState: 0});
         }
+    }
+
+    if (currentPlayer == 1) {
+        $("#player1").addClass("blink");
+        $("#player2").removeClass("blink");
+    } else {
+        $("#player1").removeClass("blink");
+        $("#player2").addClass("blink");
     }
 
     checkNextStates();
