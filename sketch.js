@@ -141,7 +141,10 @@ function checkNextStates() {
                 gridTiles[x][y].nextState = 0;
             }
             else {
-                gridTiles[x][y].nextState = gridTiles[x][y].currentState
+                if (gridTiles[x][y].currentState <= 2)
+                    gridTiles[x][y].nextState = gridTiles[x][y].currentState;
+                else
+                    gridTiles[x][y].nextState = gridTiles[x][y].currentState - 2;
             }
 
         }
@@ -159,6 +162,7 @@ function gameOfLifeTick() {
     creationTile = [];
     origCol = 0;
     currentMove = "A";
+    $("#end").addClass("locked");
     $("#turn").text(turnNumber + "A / " + turnNumber + "A");
 
     if (currentPlayer == 1)
@@ -453,8 +457,8 @@ function mouseChangeMove (event) {
                             creationTile = null;
                         }
                         else if (gridTiles[x][y].currentState == 0 && stolenTiles.includes("[" + x + "," + y + "]")) {
-                            gridTiles[x][y].currentState = origCol;
-                            origCol = 0;
+                            gridTiles[x][y].currentState = currentPlayer;
+
                             stolenTiles.splice(stolenTiles.indexOf("[" + x + "," + y + "]"), 1);
                             if (currentMove == "D")
                                 currentMove = "C";
@@ -502,6 +506,10 @@ function mouseChangeMove (event) {
                         checkNextStates();
                         checkNextStates();
                         drawAll();
+                        if (moveFinished)
+                            $("#end").removeClass("locked");
+                        else
+                            $("#end").addClass("locked");
                         /*changedTiles = [];
                         for (var x_ = 0; x_ < GRID_WIDTH; x_++) {
                             for (var y_ = 0; y_ < GRID_HEIGHT; y_++) {
@@ -570,6 +578,11 @@ $(window).mousedown(function (event) {
 });
 
 $(window).keydown(function () {
+    if (tileSizePerc == 100 && moveFinished) {
+        gameOfLifeTick();
+    }
+});
+$("#end").click(function () {
     if (tileSizePerc == 100 && moveFinished) {
         gameOfLifeTick();
     }

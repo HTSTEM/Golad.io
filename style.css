@@ -140,6 +140,10 @@ html, body {
     border-radius: 3px;
     height: 25%;
     text-align: center;
+
+    -moz-transition:background-color .2s ease-in-out;
+    -o-transition:background-color .2s ease-in-out;
+    -webkit-transition:background-color .2s ease-in-out;
 }
 .locked {
     background-color: #a6a6a6;
