@@ -563,9 +563,22 @@ function growTiles() {
 
         if (tileSizePerc < 100) {
             setTimeout(growTiles, tileSizePercSpeed - dt)
+        } else {
+            var cc = getCellsCount();
+            if (cc.red == 0 && cc.blue == 0) {
+                alert("It's a draw!");
+                $("#playing").fadeOut();
+                $("#titlescreen").show();
+            } else if (cc.red == 0) {
+                alert("Blue won!");
+                $("#playing").fadeOut();
+                $("#titlescreen").show();
+            } else if (cc.blue == 0) {
+                alert("Red won!");
+                $("#playing").fadeOut();
+                $("#titlescreen").show();
+            }
         }
-
-
     }
 }
 
@@ -603,8 +616,15 @@ $("#end").bind('touchstart click', function (event) {
         gameOfLifeTick();
     }
 });
+$("#playbtn").bind('touchstart click', function (event) {
+    $("#playing").show();
+    setupGame();
+    $("#winner").hide();
+    $("#titlescreen").fadeOut(function () {setupGame();});
+    setupGame();
+});
 
-$().ready(function () {
+function setupGame () {
     canvas = document.getElementById("gameCanvas");
     ctx = canvas.getContext("2d");
     $("#gameCanvas").offset($("#mainGame").position());
@@ -616,9 +636,6 @@ $().ready(function () {
 
     console.log("Welcome to GOLAD.io V0.0.1");
     console.log("Spawning grid...");
-
-    //$("playing")
-
 
     gridTiles = [];
 
@@ -666,4 +683,11 @@ $().ready(function () {
     console.log("Done!");
 
     drawAll();
+}
+
+$().ready(function () {
+    setupGame();
+    $("#playing").hide();
+    $("#winner").hide();
+    $("#titlescreen").fadeIn();
 });

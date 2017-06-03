@@ -8,6 +8,32 @@
     <body
         style="-moz-user-select: none; -webkit-user-select: none; -ms-user-select:none; user-select:none;-o-user-select:none;"
         unselectable="on">
+
+        <div id="titlescreen" style="display:none">
+            <div id="lhs">
+                <div id="logo">
+                    <div id="logot1">Game of life...</div>
+                    <div id="logo-inner"></div>
+                    <div id="logot2">...and death</div>
+                </div>
+            </div>
+            <div id="rhs">
+                <div id="playbtn">Play</div>
+            </div>
+        </div>
+
+        <div id="winner" style="display:none">
+            <div id="wdw">
+                <div id="win-dialog">
+                    <div id="wdc">
+                        <div id="win-message">Red wins?</div>
+                        <div id="win-sub">Tough luck sukkah!</div>
+                        <div id="win-button">I resign</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="playing">
             <div id="mainGame">
                 <canvas id="gameCanvas"></canvas>
@@ -47,13 +73,7 @@
                 </div>
             </div>
         </div>
-        <div id="winner">
-            <div id="win-dialog">
-                <div id="win-message">Red wins?</div>
-                <div id="win-sub">Tough luck sukkah!</div>
-                <div id="win-button">I resign</div>
-            </div>
-        </div>
+
 
         <script src="vendor/jquery-3.2.1.min.js"></script>
         <script src="sketch.js"></script>
