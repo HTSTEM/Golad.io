@@ -600,8 +600,6 @@ $(window).resize(function () {
 });
 
 $("#mainGame").bind('touchstart click', function (event) {
-    //mouseDown = true;
-    console.log(event);
     mouseChangeMove(event);
 });
 
