@@ -38,7 +38,7 @@ var moveFinished = false;
 var creationTile = [];
 var stolenTiles = [];
 var origCol = 0;
-var currentMove = "A";
+var currentMove = {1: "A", 2: "A"};
 
 var turnNumber = 1;
 
@@ -154,6 +154,9 @@ function checkNextStates() {
 function gameOfLifeTick() {
     if (currentPlayer == 2) {
         turnNumber++;
+
+        currentMove[1] = "A";
+        currentMove[2] = "A";
     }
 
     moveStarted = false;
@@ -161,9 +164,8 @@ function gameOfLifeTick() {
     stolenTiles = [];
     creationTile = [];
     origCol = 0;
-    currentMove = "A";
     $("#end").addClass("locked");
-    $("#turn").text(turnNumber + "A / " + turnNumber + "A");
+    $("#turn").text(turnNumber + currentMove[1] + " / " + turnNumber + currentMove[2]);
 
     if (currentPlayer == 1)
         currentPlayer = 2;
@@ -435,8 +437,8 @@ function mouseChangeMove (event) {
             if (!(containsObject({x:x, y:y}, changedThisDrag))) {
                 var rect = [xOff + x * (tileSize + TILE_PADDING), yOff + y * (tileSize + TILE_PADDING), tileSize, tileSize];
 
-                if (event.pageX > rect[0] && event.pageX < rect[0] + rect[2]) {
-                    if (event.pageY > rect[1] && event.pageY < rect[1] + rect[3]) {
+                if (event.offsetX > rect[0] && event.offsetX < rect[0] + rect[2]) {
+                    if (event.offsetY > rect[1] && event.offsetY < rect[1] + rect[3]) {
                         var otherPlayer;
                         var i;
                         if (currentPlayer == 1)
@@ -449,7 +451,7 @@ function mouseChangeMove (event) {
                             gridTiles[x][y].currentState = 0;
                             moveStarted = true;
                             moveFinished = true;
-                            currentMove = "B";
+                            currentMove[currentPlayer] = "B";
                             creationTile = "[" + x + "," + y + "]";
                         }
                         else if (gridTiles[x][y].currentState == 0 && creationTile == "[" + x + "," + y + "]" && moveFinished) {
@@ -461,17 +463,17 @@ function mouseChangeMove (event) {
                             stolenTiles = [];
                             moveStarted = false;
                             moveFinished = false;
-                            currentMove = "A";
+                            currentMove[currentPlayer] = "A";
                             creationTile = null;
                         }
                         else if (gridTiles[x][y].currentState == 0 && stolenTiles.includes("[" + x + "," + y + "]")) {
                             gridTiles[x][y].currentState = currentPlayer;
 
                             stolenTiles.splice(stolenTiles.indexOf("[" + x + "," + y + "]"), 1);
-                            if (currentMove == "D")
-                                currentMove = "C";
-                            else if (currentMove == "C")
-                                currentMove = "B";
+                            if (currentMove[currentPlayer] == "D")
+                                currentMove[currentPlayer] = "C";
+                            else if (currentMove[currentPlayer] == "C")
+                                currentMove[currentPlayer] = "B";
                             moveStarted = true;
                             moveFinished = false;
                         }
@@ -484,32 +486,29 @@ function mouseChangeMove (event) {
                             stolenTiles = [];
                             moveStarted = false;
                             moveFinished = false;
-                            currentMove = "A";
+                            currentMove[currentPlayer] = "A";
                             creationTile = null;
                         }
                         else if (gridTiles[x][y].currentState != otherPlayer && !moveStarted) {
                             gridTiles[x][y].currentState = currentPlayer + 2;
                             moveStarted = true;
                             moveFinished = false;
-                            currentMove = "B";
+                            currentMove[currentPlayer] = "B";
                             creationTile = "[" + x + "," + y + "]";
                         }
                         else if (gridTiles[x][y].currentState == currentPlayer && moveStarted && !moveFinished) {
                             origCol = gridTiles[x][y].currentState;
                             gridTiles[x][y].currentState = 0;
                             stolenTiles.push("[" + x + "," + y + "]");
-                            currentMove = "C";
+                            currentMove[currentPlayer] = "C";
                             if (stolenTiles.length >= 2) {
-                                currentMove = "D";
+                                currentMove[currentPlayer] = "D";
                                 moveFinished = true;
                             }
                         }
 
                         var turn = $("#turn");
-                        if (currentPlayer == 1)
-                            turn.text(turnNumber + currentMove + " / " + turnNumber + "A");
-                        else
-                            turn.text(turnNumber + "A / " + turnNumber + currentMove);
+                        turn.text(turnNumber + currentMove[1] + " / " + turnNumber + currentMove[2]);
 
                         checkNextStates();
                         checkNextStates();
@@ -587,8 +586,9 @@ $(window).resize(function () {
     drawAll();
 });
 
-$(window).mousedown(function (event) {
+$("#mainGame").bind('touchstart click', function (event) {
     //mouseDown = true;
+    console.log(event);
     mouseChangeMove(event);
 });
 
@@ -597,7 +597,8 @@ $(window).keydown(function () {
         gameOfLifeTick();
     }
 });
-$("#end").click(function () {
+
+$("#end").bind('touchstart click', function (event) {
     if (tileSizePerc == 100 && moveFinished) {
         gameOfLifeTick();
     }
@@ -615,6 +616,9 @@ $().ready(function () {
 
     console.log("Welcome to GOLAD.io V0.0.1");
     console.log("Spawning grid...");
+
+    //$("playing")
+
 
     gridTiles = [];
 

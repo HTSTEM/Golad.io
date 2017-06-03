@@ -8,41 +8,50 @@
     <body
         style="-moz-user-select: none; -webkit-user-select: none; -ms-user-select:none; user-select:none;-o-user-select:none;"
         unselectable="on">
-        <div id="mainGame">
-            <canvas id="gameCanvas"></canvas>
-        </div>
-
-        <div id="hud">
-            <div id="tophalf">
-                <div id="ruleset">B0/S0</div>
-                <div id="player1" class="">Player 1<br><br>
-                    <div id="player1-type">Human</div>
-                    <div id="player1-count">&#x25FC&#xd7 0</div>
-                </div>
-                <div id="player2" class="">Player 2<br><br>
-                    <div id="player2-type">Human</div>
-                    <div id="player2-count">&#x25FC&#xd7 0</div>
-                </div>
+        <div id="playing">
+            <div id="mainGame">
+                <canvas id="gameCanvas"></canvas>
             </div>
 
-            <div id="controls">
-                <table id="controls-inner">
-                    <tr>
-                        <td colspan="3" id="instructions">
-                            Tap a living cell to kill it,<br>
-                            or tap a dead cell to birth it.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2" id="turn">1A / 1A</td>
-                        <td id="end" class="locked button">End...</td>
-                    </tr>
-                    <tr>
-                        <td class="button locked">Undo</td>
-                        <td class="button locked">Redo</td>
-                        <td class="button locked">Menu</td>
-                    </tr>
-                </table>
+            <div id="hud">
+                <div id="tophalf">
+                    <div id="ruleset">B0/S0</div>
+                    <div id="player1" class="">Player 1<br><br>
+                        <div id="player1-type">Human</div>
+                        <div id="player1-count">&#x25FC&#xd7 0</div>
+                    </div>
+                    <div id="player2" class="">Player 2<br><br>
+                        <div id="player2-type">Human</div>
+                        <div id="player2-count">&#x25FC&#xd7 0</div>
+                    </div>
+                </div>
+
+                <div id="controls">
+                    <table id="controls-inner">
+                        <tr>
+                            <td colspan="3" id="instructions">
+                                Tap a living cell to kill it,<br>
+                                or tap a dead cell to birth it.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" id="turn">1A / 1A</td>
+                            <td id="end" class="locked button">End...</td>
+                        </tr>
+                        <tr>
+                            <td class="button locked">Undo</td>
+                            <td class="button locked">Redo</td>
+                            <td class="button locked">Menu</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div id="winner">
+            <div id="win-dialog">
+                <div id="win-message">Red wins?</div>
+                <div id="win-sub">Tough luck sukkah!</div>
+                <div id="win-button">I resign</div>
             </div>
         </div>
 

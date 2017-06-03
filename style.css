@@ -193,6 +193,11 @@ html, body {
     to { color: #fff; }
 }
 
+#playing {
+    width: 100%;
+    height: 100%;
+}
+
 .blink {
     color: #000;
     -webkit-animation: blink 1.5s infinite alternate;
