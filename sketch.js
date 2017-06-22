@@ -6,6 +6,8 @@
  3: Half-created red
  4: Half-created red
  */
+var socket = io();
+
 var B64 = '0123456789:;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('')//boardstate alphabet
 var B20 = 'ABCDEFGHIJKLMNOPQRST'.split('')//move position alphabet
 
@@ -50,7 +52,6 @@ var tileSizePercSpeed = 10;
 var changedTiles = [];
 
 var gameString = RULE_STRING +',20,99999,99999,0,'//20x20, no time limits, no time bonus, both humans
-var curMvStr = ''
 
 function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
     if (typeof stroke == 'undefined') {
@@ -202,6 +203,7 @@ function gameOfLifeTick() {
 
     tileSizePerc = 0;
     growTiles();
+    socket.emit('iterate','E')//send iterate message
 }
 
 function getNeighbours(x, y) {
@@ -458,6 +460,7 @@ function mouseChangeMove (event) {
                             moveFinished = true;
                             currentMove[currentPlayer] = "B";
                             creationTile = "[" + x + "," + y + "]";
+                            socket.emit('move',B20[x]+B20[y]+'A');//send message
                         }//undo full move
                         else if (gridTiles[x][y].currentState == 0 && creationTile == "[" + x + "," + y + "]" && moveFinished) {
                             gridTiles[x][y].currentState = origCol;
@@ -470,9 +473,9 @@ function mouseChangeMove (event) {
                             moveFinished = false;
                             currentMove[currentPlayer] = "A";
                             creationTile = null;
-                            curMvStr += B20[x]+B20[y]+'A'
+                            socket.emit('undo','all');//undo moves up to last E (handled by server)
                         }
-                        else if (gridTiles[x][y].currentState == 0 && stolenTiles.includes("[" + x + "," + y + "]")) {
+                        else if (gridTiles[x][y].currentState == 0 && stolenTiles.includes("[" + x + "," + y + "]")) {//unsacrifice
                             gridTiles[x][y].currentState = currentPlayer;
 
                             stolenTiles.splice(stolenTiles.indexOf("[" + x + "," + y + "]"), 1);
@@ -482,8 +485,10 @@ function mouseChangeMove (event) {
                                 currentMove[currentPlayer] = "B";
                             moveStarted = true;
                             moveFinished = false;
+                            socket.emit('undo',B20[x]+B20[y]);//send message
                         }
-                        else if (gridTiles[x][y].currentState == currentPlayer + 2) {
+                        else if (gridTiles[x][y].currentState == currentPlayer + 2) {//unbirth cell
+                            window.alert('hi')
                             origCol = gridTiles[x][y].currentState;
                             gridTiles[x][y].currentState = 0;
                             for (i = 0; i < stolenTiles.length; i ++) {
@@ -494,13 +499,15 @@ function mouseChangeMove (event) {
                             moveFinished = false;
                             currentMove[currentPlayer] = "A";
                             creationTile = null;
+                            socket.emit('undo','all');
                         }
-                        else if (gridTiles[x][y].currentState != otherPlayer && !moveStarted) {
+                        else if (gridTiles[x][y].currentState != otherPlayer && !moveStarted) {//birth tile
                             gridTiles[x][y].currentState = currentPlayer + 2;
                             moveStarted = true;
                             moveFinished = false;
                             currentMove[currentPlayer] = "B";
                             creationTile = "[" + x + "," + y + "]";
+                            socket.emit('move',B20[x]+B20[y]+"D");
                         }
                         else if (gridTiles[x][y].currentState == currentPlayer && moveStarted && !moveFinished) {
                             origCol = gridTiles[x][y].currentState;
@@ -510,6 +517,9 @@ function mouseChangeMove (event) {
                             if (stolenTiles.length >= 2) {
                                 currentMove[currentPlayer] = "D";
                                 moveFinished = true;
+                                socket.emit('move',B20[x]+B20[y]+"C")
+                            }else{
+                                socket.emit('move',B20[x]+B20[y]+"D")
                             }
                         }
 
@@ -694,4 +704,7 @@ $().ready(function () {
     $("#playing").hide();
     $("#winner").hide();
     $("#titlescreen").fadeIn();
+});
+socket.on('gameupdate', function (data){//update gamestring
+    gameString = data;
 });

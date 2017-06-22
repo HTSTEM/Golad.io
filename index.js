@@ -59,16 +59,38 @@ const requestHandler = (request, response) => {
     }else if(request.method==='POST'){//handle post request
         request.on('data', function (data) {
             console.log(data)//prints data sent to command line
-            //TODO add whatever is needed
+            //add stuff if needed
         });
     }
 }
 
-const server = http.createServer(requestHandler);
+var server = http.createServer(requestHandler);
+var io = require('socket.io').listen(server);
+function sendTime() {
+    io.emit('time', { time: new Date().toJSON() });
+}
+setInterval(sendTime, 1000);
 
-server.listen(port, (err) => {
+
+server.listen(port, (err) => {  
     if (err) {
         return console.log('something bad happened', err)
     }
+
     console.log(`server is listening on ${port}`)
+});
+
+io.on('connection', function(socket) {
+    console.log('Connection Established.');
+    var clientIp = socket.request.connection.remoteAddress;
+    id = socket.id;
+    socket.on('undo',function(data){//TODO add stuff later
+        console.log(clientIp+' undo '+data)
+    });
+    socket.on('move',function(data){
+        console.log(clientIp+' move '+data)
+    });
+    socket.on('iterate',function(data){
+        console.log(clientIp+' iterate '+data)
+    });
 });
