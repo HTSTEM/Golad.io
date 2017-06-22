@@ -6,6 +6,8 @@
  3: Half-created red
  4: Half-created red
  */
+var B64 = '0123456789:;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('')//boardstate alphabet
+var B20 = 'ABCDEFGHIJKLMNOPQRST'.split('')//move position alphabet
 
 var GRID_WIDTH = 20;
 var GRID_HEIGHT = 20;
@@ -20,7 +22,7 @@ var FANCY_MIDDLE = true;
 
 var BIRTH_COUNT = [3];
 var STAY_COUNT = [2, 3];
-var GAME_STRING = "B" + BIRTH_COUNT.join("") + "/" + "S" + STAY_COUNT.join("");
+var RULE_STRING = "B" + BIRTH_COUNT.join("") + "/" + "S" + STAY_COUNT.join("");
 
 var canvas;
 var gridTiles;
@@ -46,6 +48,9 @@ var tileSizePerc = 100;
 var tileSizePercGrow = 5;
 var tileSizePercSpeed = 10;
 var changedTiles = [];
+
+var gameString = RULE_STRING +',20,99999,99999,0,'//20x20, no time limits, no time bonus, both humans
+var curMvStr = ''
 
 function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
     if (typeof stroke == 'undefined') {
@@ -93,7 +98,7 @@ function textOntoTile(x, y, text) {
 }
 
 function drawAll() {
-    $("#ruleset").text(GAME_STRING);
+    $("#ruleset").text(RULE_STRING);
 
     ctx.fillStyle = BLACK;
     ctx.fillRect(
@@ -436,28 +441,28 @@ function mouseChangeMove (event) {
         for (var x = 0; x < GRID_WIDTH; x++) {
             if (!(containsObject({x:x, y:y}, changedThisDrag))) {
                 var rect = [xOff + x * (tileSize + TILE_PADDING), yOff + y * (tileSize + TILE_PADDING), tileSize, tileSize];
-
                 if (event.offsetX > rect[0] && event.offsetX < rect[0] + rect[2]) {
                     if (event.offsetY > rect[1] && event.offsetY < rect[1] + rect[3]) {
                         var otherPlayer;
                         var i;
-                        if (currentPlayer == 1)
+                        if (currentPlayer == 1){
                             otherPlayer = 2;
-                        else
+                        }else{
                             otherPlayer = 1;
-
-                        if ((gridTiles[x][y].currentState == currentPlayer || gridTiles[x][y].currentState == otherPlayer) && !moveStarted) {
+                        }
+                        if ((gridTiles[x][y].currentState == currentPlayer || gridTiles[x][y].currentState == otherPlayer) && 
+                            !moveStarted) {//kill any cell
                             origCol = gridTiles[x][y].currentState;
                             gridTiles[x][y].currentState = 0;
                             moveStarted = true;
                             moveFinished = true;
                             currentMove[currentPlayer] = "B";
                             creationTile = "[" + x + "," + y + "]";
-                        }
+                        }//undo full move
                         else if (gridTiles[x][y].currentState == 0 && creationTile == "[" + x + "," + y + "]" && moveFinished) {
                             gridTiles[x][y].currentState = origCol;
                             origCol = 0;
-                            for (i = 0; i < stolenTiles.length; i ++) {
+                            for (i = 0; i < stolenTiles.length; i ++) {//undo sacrafices
                                 gridTiles[stolenTiles[i][0]][stolenTiles[i][1]].currentState = currentPlayer;
                             }
                             stolenTiles = [];
@@ -465,6 +470,7 @@ function mouseChangeMove (event) {
                             moveFinished = false;
                             currentMove[currentPlayer] = "A";
                             creationTile = null;
+                            curMvStr += B20[x]+B20[y]+'A'
                         }
                         else if (gridTiles[x][y].currentState == 0 && stolenTiles.includes("[" + x + "," + y + "]")) {
                             gridTiles[x][y].currentState = currentPlayer;
