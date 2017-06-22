@@ -233,21 +233,22 @@ html, body {
 }
 #logo-inner {
     position: absolute;
-    top: 25%;
-    left: 25%;
-    width: 50%;
-    height: 50%;
+    top: 37.5%;
+    left: 37.5%;
+    width: 25%;
+    height: 25%;
     background-color: #000;
 }
 #logot1 {
     position: absolute;
-    top: 2px;
-    left: 2px;
+    top: 10px;
+    left: 10px;
+    color: white;
 }
 #logot2 {
     position: absolute;
-    bottom: 2px;
-    right: 2px;
+    bottom: 10px;
+    right: 10px;
 }
 
 .blink {
