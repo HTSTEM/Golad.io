@@ -1,7 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 const port = 8080;
-const mime = {
+const mime = {//mimetypes, add as needed
     'jpg':'image/jpg',
     'gif':'image/gif',
     'txt':'text/plain',
@@ -10,37 +10,42 @@ const mime = {
     'html':'text/html',
     'js':'application/javascript',
     'css':'text/css'
-    
-}
+};
 
 const requestHandler = (request, response) => {  
-    if (request.method==='GET'){
-        console.log(request.url)
-        var sections=request.url.split('/');
-        if (sections[sections.length-1].indexOf('.')===-1 && request.url.charAt(request.url.length-1) != '/'){
-            request.url+='/';
+     if (request.method==='GET'){//handles GET requests
+        console.log(request.url);
+        var rawUrl = request.url.split('?')[0];//removes arguments
+        var sections=rawUrl.split('/');
+        //adds a slash if last element isn't a filename
+        if (sections[sections.length-1].indexOf('.')===-1 && 
+            rawUrl.charAt(rawUrl.length-1) != '/'){
+            rawUrl+='/';
         }
-        if (request.url.endsWith('/')){
-            request.url+="index.html";
+        //if url goes nowhere, get index.html from that folder
+        if (rawUrl.endsWith('/')){
+            rawUrl+="index.html";
         }
-
+        //assume response is wanted
         var sendReply = true;
-        var mimetype=''
-        try{
-            var parts = request.url.split('.');
+        var mimetype='';
+        try{//get mimetype
+            var parts = rawUrl.split('.');//get file ending
             var ext = parts.slice(-1)[0];
             mimetype=mime[ext];
-        }catch(err){
+        }catch(err){//don't send if mimetype not found
             sendReply=false;
         }
 
         if (sendReply){
-            if (mimetype.split('/')[0]==='image'){
-                var img = fs.readFileSync(request.url.slice(1));
-                response.writeHead(200, {'Content-Type': mimetype});
-                response.end(img,'binary');
-            }else{
-                fs.readFile(request.url.slice(1),'utf-8',(err,data)=>{
+            if (mimetype.split('/')[0]==='image'){//treat images seperately
+                try{
+                    var img = fs.readFileSync(rawUrl.slice(1));
+                    response.writeHead(200, {'Content-Type': mimetype});
+                    response.end(img,'binary');
+                }catch(err){}
+            }else{//handles text
+                fs.readFile(rawUrl.slice(1),'utf-8',(err,data)=>{
                     if (err) {
                         return console.log(err);
                     }else{
@@ -51,19 +56,19 @@ const requestHandler = (request, response) => {
                 });
             }
         }
-    }else if(request.method==='POST'){
+    }else if(request.method==='POST'){//handle post request
         request.on('data', function (data) {
-            console.log(data)
+            console.log(data)//prints data sent to command line
             //TODO add whatever is needed
         });
     }
 }
 
-const server = http.createServer(requestHandler)
+const server = http.createServer(requestHandler);
 
-server.listen(port, (err) => {  
+server.listen(port, (err) => {
     if (err) {
         return console.log('something bad happened', err)
     }
     console.log(`server is listening on ${port}`)
-})
+});
