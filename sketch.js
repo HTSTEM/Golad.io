@@ -653,6 +653,8 @@ function setupGame () {
 
     canvas.width = getCW();
     canvas.height = getCH();
+    canvas.width = getCW();
+    canvas.height = getCH();
 
     console.log("Welcome to GOLAD.io V0.0.1");
     console.log("Spawning grid...");
