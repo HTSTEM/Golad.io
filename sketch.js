@@ -6,13 +6,19 @@
  3: Half-created red
  4: Half-created red
  */
-var socket = io();
+var socket;
+var online=true;
+try{
+     socket = io();
+}catch(err){
+    online=false;
+}
 
 const B64 = '0123456789:;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('')//boardstate alphabet
 const B20 = 'ABCDEFGHIJKLMNOPQRST'.split('')//move position alphabet
 
-var GRID_WIDTH = 19;
-var GRID_HEIGHT = 19;
+var GRID_WIDTH = 20;
+var GRID_HEIGHT = 20;
 var TILE_PADDING = 0;
 var RED = "#ff0000"; //"#D55336";
 var DARK_RED = "#AB422B";
@@ -203,7 +209,9 @@ function gameOfLifeTick() {
 
     tileSizePerc = 0;
     growTiles();
-    socket.emit('iterate','E')//send iterate message
+    if (online){
+        socket.emit('iterate','E')//send iterate message
+    }
 }
 
 function getNeighbours(x, y) {
@@ -445,6 +453,7 @@ function mouseChangeMove (event) {
                     if (event.offsetY > rect[1] && event.offsetY < rect[1] + rect[3]) {
                         var otherPlayer;
                         var i;
+                        var action = null;
                         if (currentPlayer == 1){
                             otherPlayer = 2;
                         }else{
@@ -458,7 +467,7 @@ function mouseChangeMove (event) {
                             moveFinished = true;
                             currentMove[currentPlayer] = "B";
                             creationTile = "[" + x + "," + y + "]";
-                            socket.emit('move',B20[x]+B20[y]+'A');//send message
+                            action={type:'move',move:B20[x]+B20[y]+'A'};//send message
                         }//undo full move
                         else if (gridTiles[x][y].currentState == 0 && creationTile == "[" + x + "," + y + "]" && moveFinished) {
                             gridTiles[x][y].currentState = origCol;
@@ -471,7 +480,7 @@ function mouseChangeMove (event) {
                             moveFinished = false;
                             currentMove[currentPlayer] = "A";
                             creationTile = null;
-                            socket.emit('undo','all');//undo moves up to last E (handled by server)
+                            action={type:'undo',move:'all'};//undo moves up to last E (handled by server)
                         }
                         else if (gridTiles[x][y].currentState == 0 && stolenTiles.includes("[" + x + "," + y + "]")) {//unsacrifice
                             gridTiles[x][y].currentState = currentPlayer;
@@ -483,7 +492,7 @@ function mouseChangeMove (event) {
                                 currentMove[currentPlayer] = "B";
                             moveStarted = true;
                             moveFinished = false;
-                            socket.emit('undo',B20[x]+B20[y]);//send message
+                            action={type:'undo',move:B20[x]+B20[y]};//send message
                         }
                         else if (gridTiles[x][y].currentState == currentPlayer + 2) {//unbirth cell
                             window.alert('hi')
@@ -497,7 +506,7 @@ function mouseChangeMove (event) {
                             moveFinished = false;
                             currentMove[currentPlayer] = "A";
                             creationTile = null;
-                            socket.emit('undo','all');
+                            action={type:'undo',move:'all'};
                         }
                         else if (gridTiles[x][y].currentState != otherPlayer && !moveStarted) {//birth tile
                             gridTiles[x][y].currentState = currentPlayer + 2;
@@ -505,7 +514,7 @@ function mouseChangeMove (event) {
                             moveFinished = false;
                             currentMove[currentPlayer] = "B";
                             creationTile = "[" + x + "," + y + "]";
-                            socket.emit('move',B20[x]+B20[y]+"D");
+                            action={type:'move',move:B20[x]+B20[y]+"D"};
                         }
                         else if (gridTiles[x][y].currentState == currentPlayer && moveStarted && !moveFinished) {
                             origCol = gridTiles[x][y].currentState;
@@ -515,10 +524,13 @@ function mouseChangeMove (event) {
                             if (stolenTiles.length >= 2) {
                                 currentMove[currentPlayer] = "D";
                                 moveFinished = true;
-                                socket.emit('move',B20[x]+B20[y]+"C")
+                                action={type:'move',move:B20[x]+B20[y]+"C"};
                             }else{
-                                socket.emit('move',B20[x]+B20[y]+"D")
+                                action={type:'move',move:B20[x]+B20[y]+"D"};
                             }
+                        }
+                        if (online && action!=null){
+                            socket.emit(action.type,action.move)
                         }
 
                         var turn = $("#turn");
@@ -644,10 +656,24 @@ function setupGame () {
 
     console.log("Welcome to GOLAD.io V0.0.1");
     console.log("Spawning grid...");
+    if (online){
+        socket.emit('newgame',0.5,BIRTH_COUNT,GRID_WIDTH,-1,-1);
+        socket.on('newboard',function(board){
+            gridTiles = board;
+            if (currentPlayer == 1) {
+                $("#player1").addClass("blink");
+                $("#player2").removeClass("blink");
+            } else {
+                $("#player1").removeClass("blink");
+                $("#player2").addClass("blink");
+            }
 
-    socket.emit('newgame',0.5,BIRTH_COUNT,GRID_WIDTH,-1,-1);
-    socket.on('newboard',function(board){
-        gridTiles = board;
+            checkNextStates();
+            console.log("Done!");
+            drawAll();
+        });
+    }else{
+        gridTiles = newBoard(0.5,GRID_WIDTH);
         if (currentPlayer == 1) {
             $("#player1").addClass("blink");
             $("#player2").removeClass("blink");
@@ -659,7 +685,64 @@ function setupGame () {
         checkNextStates();
         console.log("Done!");
         drawAll();
-    });
+    }
+}
+
+function newBoard(density,size){
+    var board= [];
+
+    for (var y = 0; y < Math.floor(size/2); y++) {//half the board
+        board.push([]);
+        for (var x = 0; x < size; x++) {
+            var val;
+            var r = Math.random();
+            if ((2*r) < density){
+                val = 1;
+            }else if (r < density){
+                val = 2;
+            }else{
+                val = 0;
+            }
+            board[y].push({currentState: val, nextState: 0});
+        }
+    }
+    for (y = 0; y < Math.ceil(size/2); y ++) {//fill other half
+        board.push([]); 
+    }
+    for (y = 0; y < Math.floor(size/2); y++) {//rotate board
+        for (x = 0; x < size; x++) {
+            if (board[y][size - x - 1].currentState == 2)
+                val = 1;
+            else if (board[y][size - x - 1].currentState == 1)
+                val = 2;
+            else
+                val = 0;
+
+            board[size-y-1].push({currentState: val, nextState: 0});
+        }
+    }
+    if (size%2==1){//odd case
+        centre = []
+        centFlip = []
+        for(var i=0; i < Math.floor(size/2); i++){//create array
+            var val;
+            var r = Math.random();
+            if ((2*r) < density){
+                centre.push({currentState: 1, nextState: 0});
+                centFlip.push({currentState: 2, nextState: 0});
+            }else if (r < density){
+                centre.push({currentState: 2, nextState: 0});
+                centFlip.push({currentState: 1, nextState: 0});
+            }else{
+                centre.push({currentState: 0, nextState: 0});
+                centFlip.push({currentState: 0, nextState: 0});
+            }
+        }
+        final = centre.concat([{currentState: 0, nextState: 0}]).concat(centFlip.reverse())
+        board[Math.floor(size/2)]=final
+    }
+    return board
+
 }
 
 $().ready(function () {
@@ -667,6 +750,8 @@ $().ready(function () {
     $("#winner").hide();
     $("#titlescreen").fadeIn();
 });
-socket.on('gameupdate', function (data){//update gamestring
-    gameString = data;
-});
+if (online){
+    socket.on('gameupdate', function (data){//update gamestring
+        gameString = data;
+    });
+}

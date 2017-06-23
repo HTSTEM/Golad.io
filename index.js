@@ -99,10 +99,10 @@ io.on('connection', function(socket) {
 });
 
 function newBoard(density,size){
-    var gridTiles = [];
+    var board= [];
 
     for (var y = 0; y < Math.floor(size/2); y++) {//half the board
-        gridTiles.push([]);
+        board.push([]);
         for (var x = 0; x < size; x++) {
             var val;
             var r = Math.random();
@@ -113,22 +113,22 @@ function newBoard(density,size){
             }else{
                 val = 0;
             }
-            gridTiles[y].push({currentState: val, nextState: 0});
+            board[y].push({currentState: val, nextState: 0});
         }
     }
     for (y = 0; y < Math.ceil(size/2); y ++) {//fill other half
-        gridTiles.push([]); 
+        board.push([]); 
     }
     for (y = 0; y < Math.floor(size/2); y++) {//rotate board
         for (x = 0; x < size; x++) {
-            if (gridTiles[y][size - x - 1].currentState == 2)
+            if (board[y][size - x - 1].currentState == 2)
                 val = 1;
-            else if (gridTiles[y][size - x - 1].currentState == 1)
+            else if (board[y][size - x - 1].currentState == 1)
                 val = 2;
             else
                 val = 0;
 
-            gridTiles[size-y-1].push({currentState: val, nextState: 0});
+            board[size-y-1].push({currentState: val, nextState: 0});
         }
     }
     if (size%2==1){//odd case
@@ -149,13 +149,9 @@ function newBoard(density,size){
             }
         }
         final = centre.concat([{currentState: 0, nextState: 0}]).concat(centFlip.reverse())
-        console.log(final)
-        gridTiles[Math.floor(size/2)]=final
+        board[Math.floor(size/2)]=final
     }
-    for(var i = 0; i<gridTiles.length; i++){
-        console.log(gridTiles[i].length)
-    }
-    return gridTiles
+    return board
 
 }
 
