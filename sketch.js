@@ -6,9 +6,13 @@
  3: Half-created red
  4: Half-created red
  */
+var socket = io();
 
-var GRID_WIDTH = 20;
-var GRID_HEIGHT = 20;
+const B64 = '0123456789:;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('')//boardstate alphabet
+const B20 = 'ABCDEFGHIJKLMNOPQRST'.split('')//move position alphabet
+
+var GRID_WIDTH = 19;
+var GRID_HEIGHT = 19;
 var TILE_PADDING = 0;
 var RED = "#ff0000"; //"#D55336";
 var DARK_RED = "#AB422B";
@@ -20,7 +24,7 @@ var FANCY_MIDDLE = true;
 
 var BIRTH_COUNT = [3];
 var STAY_COUNT = [2, 3];
-var GAME_STRING = "B" + BIRTH_COUNT.join("") + "/" + "S" + STAY_COUNT.join("");
+var RULE_STRING = "B" + BIRTH_COUNT.join("") + "/" + "S" + STAY_COUNT.join("");
 
 var canvas;
 var gridTiles;
@@ -46,6 +50,8 @@ var tileSizePerc = 100;
 var tileSizePercGrow = 5;
 var tileSizePercSpeed = 10;
 var changedTiles = [];
+
+var gameString = RULE_STRING +','+GRID_WIDTH+',99999,99999,0,'//20x20, no time limits, no time bonus, both humans
 
 function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
     if (typeof stroke == 'undefined') {
@@ -93,7 +99,7 @@ function textOntoTile(x, y, text) {
 }
 
 function drawAll() {
-    $("#ruleset").text(GAME_STRING);
+    $("#ruleset").text(RULE_STRING);
 
     ctx.fillStyle = BLACK;
     ctx.fillRect(
@@ -197,6 +203,7 @@ function gameOfLifeTick() {
 
     tileSizePerc = 0;
     growTiles();
+    socket.emit('iterate','E')//send iterate message
 }
 
 function getNeighbours(x, y) {
@@ -390,8 +397,6 @@ function redrawTile(x, y) {
                 size);
         }
 
-
-
         switch (gridTiles[x][y].nextState) {
             case 0:
                 ctx.fillStyle = GREY;
@@ -436,28 +441,29 @@ function mouseChangeMove (event) {
         for (var x = 0; x < GRID_WIDTH; x++) {
             if (!(containsObject({x:x, y:y}, changedThisDrag))) {
                 var rect = [xOff + x * (tileSize + TILE_PADDING), yOff + y * (tileSize + TILE_PADDING), tileSize, tileSize];
-
                 if (event.offsetX > rect[0] && event.offsetX < rect[0] + rect[2]) {
                     if (event.offsetY > rect[1] && event.offsetY < rect[1] + rect[3]) {
                         var otherPlayer;
                         var i;
-                        if (currentPlayer == 1)
+                        if (currentPlayer == 1){
                             otherPlayer = 2;
-                        else
+                        }else{
                             otherPlayer = 1;
-
-                        if ((gridTiles[x][y].currentState == currentPlayer || gridTiles[x][y].currentState == otherPlayer) && !moveStarted) {
+                        }
+                        if ((gridTiles[x][y].currentState == currentPlayer || gridTiles[x][y].currentState == otherPlayer) && 
+                            !moveStarted) {//kill any cell
                             origCol = gridTiles[x][y].currentState;
                             gridTiles[x][y].currentState = 0;
                             moveStarted = true;
                             moveFinished = true;
                             currentMove[currentPlayer] = "B";
                             creationTile = "[" + x + "," + y + "]";
-                        }
+                            socket.emit('move',B20[x]+B20[y]+'A');//send message
+                        }//undo full move
                         else if (gridTiles[x][y].currentState == 0 && creationTile == "[" + x + "," + y + "]" && moveFinished) {
                             gridTiles[x][y].currentState = origCol;
                             origCol = 0;
-                            for (i = 0; i < stolenTiles.length; i ++) {
+                            for (i = 0; i < stolenTiles.length; i ++) {//undo sacrafices
                                 gridTiles[stolenTiles[i][0]][stolenTiles[i][1]].currentState = currentPlayer;
                             }
                             stolenTiles = [];
@@ -465,8 +471,9 @@ function mouseChangeMove (event) {
                             moveFinished = false;
                             currentMove[currentPlayer] = "A";
                             creationTile = null;
+                            socket.emit('undo','all');//undo moves up to last E (handled by server)
                         }
-                        else if (gridTiles[x][y].currentState == 0 && stolenTiles.includes("[" + x + "," + y + "]")) {
+                        else if (gridTiles[x][y].currentState == 0 && stolenTiles.includes("[" + x + "," + y + "]")) {//unsacrifice
                             gridTiles[x][y].currentState = currentPlayer;
 
                             stolenTiles.splice(stolenTiles.indexOf("[" + x + "," + y + "]"), 1);
@@ -476,8 +483,10 @@ function mouseChangeMove (event) {
                                 currentMove[currentPlayer] = "B";
                             moveStarted = true;
                             moveFinished = false;
+                            socket.emit('undo',B20[x]+B20[y]);//send message
                         }
-                        else if (gridTiles[x][y].currentState == currentPlayer + 2) {
+                        else if (gridTiles[x][y].currentState == currentPlayer + 2) {//unbirth cell
+                            window.alert('hi')
                             origCol = gridTiles[x][y].currentState;
                             gridTiles[x][y].currentState = 0;
                             for (i = 0; i < stolenTiles.length; i ++) {
@@ -488,13 +497,15 @@ function mouseChangeMove (event) {
                             moveFinished = false;
                             currentMove[currentPlayer] = "A";
                             creationTile = null;
+                            socket.emit('undo','all');
                         }
-                        else if (gridTiles[x][y].currentState != otherPlayer && !moveStarted) {
+                        else if (gridTiles[x][y].currentState != otherPlayer && !moveStarted) {//birth tile
                             gridTiles[x][y].currentState = currentPlayer + 2;
                             moveStarted = true;
                             moveFinished = false;
                             currentMove[currentPlayer] = "B";
                             creationTile = "[" + x + "," + y + "]";
+                            socket.emit('move',B20[x]+B20[y]+"D");
                         }
                         else if (gridTiles[x][y].currentState == currentPlayer && moveStarted && !moveFinished) {
                             origCol = gridTiles[x][y].currentState;
@@ -504,6 +515,9 @@ function mouseChangeMove (event) {
                             if (stolenTiles.length >= 2) {
                                 currentMove[currentPlayer] = "D";
                                 moveFinished = true;
+                                socket.emit('move',B20[x]+B20[y]+"C")
+                            }else{
+                                socket.emit('move',B20[x]+B20[y]+"D")
                             }
                         }
 
@@ -616,10 +630,8 @@ $("#end").bind('touchstart click', function (event) {
 });
 $("#playbtn").bind('touchstart click', function (event) {
     $("#playing").show();
-    setupGame();
     $("#winner").hide();
     $("#titlescreen").fadeOut(function () {setupGame();});
-    setupGame();
 });
 
 function setupGame () {
@@ -629,63 +641,32 @@ function setupGame () {
 
     canvas.width = getCW();
     canvas.height = getCH();
-    canvas.width = getCW();
-    canvas.height = getCH();
 
     console.log("Welcome to GOLAD.io V0.0.1");
     console.log("Spawning grid...");
 
-    gridTiles = [];
-
-    for (var y = 0; y < GRID_HEIGHT / 2; y++) {
-        gridTiles.push([]);
-
-        for (var x = 0; x < GRID_WIDTH; x++) {
-            var val;
-            var r = Math.random();
-            if (r < 0.3)
-                val = 1;
-            else if (r < 0.6)
-                val = 2;
-            else
-                val = 0;
-
-            gridTiles[y].push({currentState: val, nextState: 0});
+    socket.emit('newgame',0.5,BIRTH_COUNT,GRID_WIDTH,-1,-1);
+    socket.on('newboard',function(board){
+        gridTiles = board;
+        if (currentPlayer == 1) {
+            $("#player1").addClass("blink");
+            $("#player2").removeClass("blink");
+        } else {
+            $("#player1").removeClass("blink");
+            $("#player2").addClass("blink");
         }
-    }
-    for (y = 0; y < GRID_WIDTH / 2; y ++) { gridTiles.push([]); }
 
-    for (y = 0; y < GRID_HEIGHT / 2; y++) {
-        for (x = 0; x < GRID_WIDTH; x++) {
-            if (gridTiles[y][GRID_WIDTH - x - 1].currentState == 2)
-                val = 1;
-            else if (gridTiles[y][GRID_WIDTH - x - 1].currentState == 1)
-                val = 2;
-            else
-                val = 0;
-
-            gridTiles[GRID_HEIGHT / 2 + (GRID_HEIGHT / 2 - y - 1)].push({currentState: val, nextState: 0});
-        }
-    }
-
-    if (currentPlayer == 1) {
-        $("#player1").addClass("blink");
-        $("#player2").removeClass("blink");
-    } else {
-        $("#player1").removeClass("blink");
-        $("#player2").addClass("blink");
-    }
-
-    checkNextStates();
-
-    console.log("Done!");
-
-    drawAll();
+        checkNextStates();
+        console.log("Done!");
+        drawAll();
+    });
 }
 
 $().ready(function () {
-    setupGame();
     $("#playing").hide();
     $("#winner").hide();
     $("#titlescreen").fadeIn();
+});
+socket.on('gameupdate', function (data){//update gamestring
+    gameString = data;
 });
