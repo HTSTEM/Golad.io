@@ -486,7 +486,6 @@ function mouseChangeMove (event) {
                             socket.emit('undo',B20[x]+B20[y]);//send message
                         }
                         else if (gridTiles[x][y].currentState == currentPlayer + 2) {//unbirth cell
-                            window.alert('hi')
                             origCol = gridTiles[x][y].currentState;
                             gridTiles[x][y].currentState = 0;
                             for (i = 0; i < stolenTiles.length; i ++) {
