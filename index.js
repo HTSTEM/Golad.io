@@ -93,8 +93,10 @@ io.on('connection', function(socket) {
         console.log(clientIp+' iterate '+data)
     });
     socket.on('newgame',function(density,rule,size,timelimit,timebonus){
-        console.log('hi')
-        socket.emit('newboard',newBoard(density,size))
+        board = newBoard(density,size)
+        toSend = rule+','+size+','+timelimit+','+timebonus+',0,'+boardToString(board)+','
+        socket.emit('gameupdate',toSend)
+        console.log(toSend)
     });
 });
 
@@ -166,8 +168,12 @@ function boardToString(board){
             if (count==3){//base 4, 64 bit alphabet, 3 cells per digit
                 count=0;
                 string+=B64[value];
-                value = 0
+                value = 0;
             }
         }
     }
+    if(count!=0){
+        string+=B64[value];
+    }
+    return string
 }
