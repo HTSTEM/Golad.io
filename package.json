@@ -1,0 +1,13 @@
+{
+  "name": "Golad.IO",
+  "version": "0.0.1",
+  "description": "An oline version of CaryKH's GOLAD",
+  "dependencies": {
+    "express": "^4.10.2",
+    "socket.io": "^1.7.1"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "main": "index.js"
+}
