@@ -1,16 +1,7 @@
+const http = require('http');
 const fs = require('fs');
-
-var express = require("express");
-var app = require('express')();
-var http = require('http').Server(app);
-var io = new require('socket.io')(http);
-
-app.set('port', (process.env.PORT || 5000));
-app.use("", express.static(__dirname));
-app.get('/', function(req, res){
-    res.sendFile(__dirname + '/index.html');
-});
-
+const boardTools = require('./board')
+const port = 8080;
 const mime = {//mimetypes, add as needed
     'jpg':'image/jpg',
     'gif':'image/gif',
@@ -75,6 +66,16 @@ const requestHandler = (request, response) => {
     }
 }
 
+var server = http.createServer(requestHandler);
+var io = require('socket.io').listen(server);
+
+server.listen(port, (err) => {  
+    if (err) {
+        return console.log('something bad happened', err)
+    }
+
+    console.log(`server is listening on ${port}`)
+});
 
 io.on('connection', function(socket) {
     console.log('Connection Established.');
@@ -95,11 +96,5 @@ io.on('connection', function(socket) {
         socket.emit('gameupdate',toSend)
         console.log(toSend)
     });
-});
-
-
-// Start HTTP server on Heroku port or 5000
-http.listen(app.get('port'), function(){
-    console.log('listening on *:' + app.get('port').toString());
 });
 
