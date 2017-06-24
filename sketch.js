@@ -14,9 +14,6 @@ try{
     online=false;
 }
 
-const B64 = '0123456789:;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('')//boardstate alphabet
-const B20 = 'ABCDEFGHIJKLMNOPQRST'.split('')//move position alphabet
-
 var GRID_WIDTH = 20;
 var GRID_HEIGHT = 20;
 var TILE_PADDING = 0;
@@ -57,7 +54,7 @@ var tileSizePercGrow = 5;
 var tileSizePercSpeed = 10;
 var changedTiles = [];
 
-var gameString = RULE_STRING +','+GRID_WIDTH+',99999,99999,0,'//20x20, no time limits, no time bonus, both humans
+var gameString = ''//20x20, no time limits, no time bonus, both humans
 
 function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
     if (typeof stroke == 'undefined') {
@@ -158,7 +155,6 @@ function checkNextStates() {
                 else
                     gridTiles[x][y].nextState = gridTiles[x][y].currentState - 2;
             }
-
         }
     }
 }
@@ -515,7 +511,7 @@ function mouseChangeMove (event) {
                             creationTile = "[" + x + "," + y + "]";
                             action={type:'move',move:B20[x]+B20[y]+"D"};
                         }
-                        else if (gridTiles[x][y].currentState == currentPlayer && moveStarted && !moveFinished) {
+                        else if (gridTiles[x][y].currentState == currentPlayer && moveStarted && !moveFinished) {//sacrifice
                             origCol = gridTiles[x][y].currentState;
                             gridTiles[x][y].currentState = 0;
                             stolenTiles.push("[" + x + "," + y + "]");
@@ -525,7 +521,7 @@ function mouseChangeMove (event) {
                                 moveFinished = true;
                                 action={type:'move',move:B20[x]+B20[y]+"C"};
                             }else{
-                                action={type:'move',move:B20[x]+B20[y]+"D"};
+                                action={type:'move',move:B20[x]+B20[y]+"B"};
                             }
                         }
                         if (online && action!=null){
@@ -658,21 +654,7 @@ function setupGame () {
     console.log("Welcome to GOLAD.io V0.0.1");
     console.log("Spawning grid...");
     if (online){
-        socket.emit('newgame',0.5,BIRTH_COUNT,GRID_WIDTH,-1,-1);
-        socket.on('newboard',function(board){
-            gridTiles = board;
-            if (currentPlayer == 1) {
-                $("#player1").addClass("blink");
-                $("#player2").removeClass("blink");
-            } else {
-                $("#player1").removeClass("blink");
-                $("#player2").addClass("blink");
-            }
-
-            checkNextStates();
-            console.log("Done!");
-            drawAll();
-        });
+        socket.emit('newgame',0.5,RULE_STRING,GRID_WIDTH,99999,99999);
     }else{
         gridTiles = newBoard(0.5,GRID_WIDTH);
         if (currentPlayer == 1) {
@@ -686,65 +668,21 @@ function setupGame () {
         checkNextStates();
         console.log("Done!");
         drawAll();
+        gameString = makeString()
+        console.log(gameString)
     }
 }
 
-function newBoard(density,size){
-    var board= [];
-
-    for (var y = 0; y < Math.floor(size/2); y++) {//half the board
-        board.push([]);
-        for (var x = 0; x < size; x++) {
-            var val;
-            var r = Math.random();
-            if ((2*r) < density){
-                val = 1;
-            }else if (r < density){
-                val = 2;
-            }else{
-                val = 0;
-            }
-            board[y].push({currentState: val, nextState: 0});
-        }
-    }
-    for (y = 0; y < Math.ceil(size/2); y ++) {//fill other half
-        board.push([]); 
-    }
-    for (y = 0; y < Math.floor(size/2); y++) {//rotate board
-        for (x = 0; x < size; x++) {
-            if (board[y][size - x - 1].currentState == 2)
-                val = 1;
-            else if (board[y][size - x - 1].currentState == 1)
-                val = 2;
-            else
-                val = 0;
-
-            board[size-y-1].push({currentState: val, nextState: 0});
-        }
-    }
-    if (size%2==1){//odd case
-        centre = []
-        centFlip = []
-        for(var i=0; i < Math.floor(size/2); i++){//create array
-            var val;
-            var r = Math.random();
-            if ((2*r) < density){
-                centre.push({currentState: 1, nextState: 0});
-                centFlip.push({currentState: 2, nextState: 0});
-            }else if (r < density){
-                centre.push({currentState: 2, nextState: 0});
-                centFlip.push({currentState: 1, nextState: 0});
-            }else{
-                centre.push({currentState: 0, nextState: 0});
-                centFlip.push({currentState: 0, nextState: 0});
-            }
-        }
-        final = centre.concat([{currentState: 0, nextState: 0}]).concat(centFlip.reverse())
-        board[Math.floor(size/2)]=final
-    }
-    return board
-
+function makeString(){
+    var string = RULE_STRING+',';
+    string += GRID_WIDTH +',';
+    string += '99999,99999,';//time stuff for now
+    string += '0,';//No AI for now
+    string += boardToString(gridTiles)+',';
+    //TODO move tracker
+    return string
 }
+
 
 $().ready(function () {
     $("#playing").hide();
@@ -753,6 +691,20 @@ $().ready(function () {
 });
 if (online){
     socket.on('gameupdate', function (data){//update gamestring
+        if (!data.includes(gameString)||gameString===''){
+            parts = data.split(',')
+            RULE_STRING = parts[0]
+            rules = parseRule(parts[0])//rule
+            BIRTH_COUNT = rules[0]
+            STAY_COUNT = rules[1]
+            GRID_HEIGHT = GRID_WIDTH = parseInt(parts[1])//size
+            gridTiles=stringToBoard(parts[5])
+            checkNextStates();
+            drawAll()
+        }
         gameString = data;
+        console.log(gameString);
     });
 }
+
+
