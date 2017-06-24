@@ -1,8 +1,6 @@
-const B64 = '0123456789:;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('')//boardstate alphabet
-const B20 = 'ABCDEFGHIJKLMNOPQRST'.split('')//move position alphabet
-
 const http = require('http');
 const fs = require('fs');
+const boardTools = require('./board')
 const port = 8080;
 const mime = {//mimetypes, add as needed
     'jpg':'image/jpg',
@@ -93,87 +91,10 @@ io.on('connection', function(socket) {
         console.log(clientIp+' iterate '+data)
     });
     socket.on('newgame',function(density,rule,size,timelimit,timebonus){
-        board = newBoard(density,size)
-        toSend = rule+','+size+','+timelimit+','+timebonus+',0,'+boardToString(board)+','
+        board = boardTools.newBoard(density,size)
+        toSend = rule+','+size+','+timelimit+','+timebonus+',0,'+boardTools.boardToString(board)+','
         socket.emit('gameupdate',toSend)
         console.log(toSend)
     });
 });
 
-function newBoard(density,size){
-    var board= [];
-
-    for (var y = 0; y < Math.floor(size/2); y++) {//half the board
-        board.push([]);
-        for (var x = 0; x < size; x++) {
-            var val;
-            var r = Math.random();
-            if ((2*r) < density){
-                val = 1;
-            }else if (r < density){
-                val = 2;
-            }else{
-                val = 0;
-            }
-            board[y].push({currentState: val, nextState: 0});
-        }
-    }
-    for (y = 0; y < Math.ceil(size/2); y ++) {//fill other half
-        board.push([]); 
-    }
-    for (y = 0; y < Math.floor(size/2); y++) {//rotate board
-        for (x = 0; x < size; x++) {
-            if (board[y][size - x - 1].currentState == 2)
-                val = 1;
-            else if (board[y][size - x - 1].currentState == 1)
-                val = 2;
-            else
-                val = 0;
-
-            board[size-y-1].push({currentState: val, nextState: 0});
-        }
-    }
-    if (size%2==1){//odd case
-        centre = []
-        centFlip = []
-        for(var i=0; i < Math.floor(size/2); i++){//create array
-            var val;
-            var r = Math.random();
-            if ((2*r) < density){
-                centre.push({currentState: 1, nextState: 0});
-                centFlip.push({currentState: 2, nextState: 0});
-            }else if (r < density){
-                centre.push({currentState: 2, nextState: 0});
-                centFlip.push({currentState: 1, nextState: 0});
-            }else{
-                centre.push({currentState: 0, nextState: 0});
-                centFlip.push({currentState: 0, nextState: 0});
-            }
-        }
-        final = centre.concat([{currentState: 0, nextState: 0}]).concat(centFlip.reverse())
-        board[Math.floor(size/2)]=final
-    }
-    return board
-
-}
-
-function boardToString(board){
-    var count =0;
-    var value =0;
-    var string = '';
-    for(var x=0;x<board.length;x++){
-        for(var y=board[0].length-1; y>=0; y--){//invert y axis
-            count++;
-            value+= board[x][y].currentState*Math.pow(4,3-count);//base 4 cellstate stuff
-            if (count==3){//base 4, 64 bit alphabet, 3 cells per digit
-                count=0;
-                string+=B64[value];
-                value = 0;
-            }
-        }
-    }
-    if(count!=0){
-        string+=B64[value];
-    }
-    return string
-}

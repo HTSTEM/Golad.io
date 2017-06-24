@@ -14,9 +14,6 @@ try{
     online=false;
 }
 
-const B64 = '0123456789:;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('')//boardstate alphabet
-const B20 = 'ABCDEFGHIJKLMNOPQRST'.split('')//move position alphabet
-
 var GRID_WIDTH = 20;
 var GRID_HEIGHT = 20;
 var TILE_PADDING = 0;
@@ -158,7 +155,6 @@ function checkNextStates() {
                 else
                     gridTiles[x][y].nextState = gridTiles[x][y].currentState - 2;
             }
-
         }
     }
 }
@@ -515,7 +511,7 @@ function mouseChangeMove (event) {
                             creationTile = "[" + x + "," + y + "]";
                             action={type:'move',move:B20[x]+B20[y]+"D"};
                         }
-                        else if (gridTiles[x][y].currentState == currentPlayer && moveStarted && !moveFinished) {
+                        else if (gridTiles[x][y].currentState == currentPlayer && moveStarted && !moveFinished) {//sacrifice
                             origCol = gridTiles[x][y].currentState;
                             gridTiles[x][y].currentState = 0;
                             stolenTiles.push("[" + x + "," + y + "]");
@@ -525,7 +521,7 @@ function mouseChangeMove (event) {
                                 moveFinished = true;
                                 action={type:'move',move:B20[x]+B20[y]+"C"};
                             }else{
-                                action={type:'move',move:B20[x]+B20[y]+"D"};
+                                action={type:'move',move:B20[x]+B20[y]+"B"};
                             }
                         }
                         if (online && action!=null){
@@ -687,83 +683,6 @@ function makeString(){
     return string
 }
 
-function boardToString(board){
-    var count =0;
-    var value =0;
-    var string = '';
-    for(var x=0;x<board.length;x++){
-        for(var y=board[0].length-1; y>=0; y--){//invert y axis
-            count++;
-            value+= board[x][y].currentState*Math.pow(4,3-count);//base 4 cellstate stuff
-            if (count==3){//base 4, 64 bit alphabet, 3 cells per digit
-                count=0;
-                string+=B64[value];
-                value = 0;
-            }
-        }
-    }
-    if(count!=0){
-        string+=B64[value];
-    }
-    return string
-}
-
-function newBoard(density,size){
-    var board= [];
-
-    for (var y = 0; y < Math.floor(size/2); y++) {//half the board
-        board.push([]);
-        for (var x = 0; x < size; x++) {
-            var val;
-            var r = Math.random();
-            if ((2*r) < density){
-                val = 1;
-            }else if (r < density){
-                val = 2;
-            }else{
-                val = 0;
-            }
-            board[y].push({currentState: val, nextState: 0});
-        }
-    }
-    for (y = 0; y < Math.ceil(size/2); y ++) {//fill other half
-        board.push([]); 
-    }
-    for (y = 0; y < Math.floor(size/2); y++) {//rotate board
-        for (x = 0; x < size; x++) {
-            if (board[y][size - x - 1].currentState == 2)
-                val = 1;
-            else if (board[y][size - x - 1].currentState == 1)
-                val = 2;
-            else
-                val = 0;
-
-            board[size-y-1].push({currentState: val, nextState: 0});
-        }
-    }
-    if (size%2==1){//odd case
-        centre = []
-        centFlip = []
-        for(var i=0; i < Math.floor(size/2); i++){//create array
-            var val;
-            var r = Math.random();
-            if ((2*r) < density){
-                centre.push({currentState: 1, nextState: 0});
-                centFlip.push({currentState: 2, nextState: 0});
-            }else if (r < density){
-                centre.push({currentState: 2, nextState: 0});
-                centFlip.push({currentState: 1, nextState: 0});
-            }else{
-                centre.push({currentState: 0, nextState: 0});
-                centFlip.push({currentState: 0, nextState: 0});
-            }
-        }
-        final = centre.concat([{currentState: 0, nextState: 0}]).concat(centFlip.reverse())
-        board[Math.floor(size/2)]=final
-    }
-    return board
-
-}
 
 $().ready(function () {
     $("#playing").hide();
@@ -772,11 +691,14 @@ $().ready(function () {
 });
 if (online){
     socket.on('gameupdate', function (data){//update gamestring
-        if (gameString==''){
+        if (!data.includes(gameString)||gameString===''){
             parts = data.split(',')
-            parseRule(parts[0])//rule
+            RULE_STRING = parts[0]
+            rules = parseRule(parts[0])//rule
+            BIRTH_COUNT = rules[0]
+            STAY_COUNT = rules[1]
             GRID_HEIGHT = GRID_WIDTH = parseInt(parts[1])//size
-            stringToBoard(parts[5])
+            gridTiles=stringToBoard(parts[5])
             checkNextStates();
             drawAll()
         }
@@ -784,46 +706,5 @@ if (online){
         console.log(gameString);
     });
 }
-function stringToBoard(boardString){
-    gridTiles=[];
-    states = [];
-    counter = 0;
-    for (var y=0; y<GRID_HEIGHT; y++) {
-        gridTiles.push([]);
-        for (var x=0; x<GRID_WIDTH; x++) {
-            gridTiles[y].push({currentState: 0, nextState: 0});//fill board
-        }
-    }
-    for (var i=0; i<boardString.length; i++){
-        var num = B64.indexOf(boardString[i])
-        for (var j=2; j>=0; j--){
-            var state = Math.floor(num/Math.pow(4,j))//read states into 1d array
-            state %= 4
-            states.push(state)
-        }
-    }
-    for (var y=0; y<GRID_HEIGHT; y++) {
-        for (var x=GRID_WIDTH-1; x>=0; x--) {
-            gridTiles[y][x].currentState = states[counter];//put states onto board
-            counter++;
-        }
-    }
-}
-function parseRule(rulestring){
-    rules = rulestring.split('/');//split into birth and survive
-    BIRTH_COUNT = [];
-    STAY_COUNT = [];
-    for(var i=0; i<rules[0].length; i++){
-        var num = parseInt(rules[0].charAt(i))
-        if (num!=NaN){
-            BIRTH_COUNT.push(num)
-        }
-    }
-    for(var i=0; i<rules[1].length; i++){
-        var num = parseInt(rules[1].charAt(i))
-        if (num!=NaN){
-            STAY_COUNT.push(num)
-        }
-    }
-    RULE_STRING = rulestring
-}
+
+
