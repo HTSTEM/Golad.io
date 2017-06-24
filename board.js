@@ -7,25 +7,25 @@ function parseRule(rulestring){
     survive = [];
     for(var i=0; i<rules[0].length; i++){
         var num = parseInt(rules[0].charAt(i))
-        if (num!=NaN){
-            births.push(num)
+        if (!isNaN(num)){
+            births.push(num);
         }
     }
     for(var i=0; i<rules[1].length; i++){
         var num = parseInt(rules[1].charAt(i))
-        if (num!=NaN){
+        if (!isNaN(num)){
             survive.push(num)
         }
     }
     return [births,survive]
 }
-function stringToBoard(boardString){
+function stringToBoard(boardString,size){
     grid=[];
     states = [];
     counter = 0;
-    for (var y=0; y<GRID_HEIGHT; y++) {
+    for (var y=0; y<size; y++) {
         grid.push([]);
-        for (var x=0; x<GRID_WIDTH; x++) {
+        for (var x=0; x<size; x++) {
             grid[y].push({currentState: 0, nextState: 0});//fill board
         }
     }
@@ -37,8 +37,8 @@ function stringToBoard(boardString){
             states.push(state)
         }
     }
-    for (var y=0; y<GRID_HEIGHT; y++) {
-        for (var x=GRID_WIDTH-1; x>=0; x--) {
+    for (var y=0; y<size; y++) {
+        for (var x=size-1; x>=0; x--) {
             grid[y][x].currentState = states[counter];//put states onto board
             counter++;
         }
@@ -124,13 +124,13 @@ function boardToString(board){
     return string
 }
 
-function iterate(grid,birth,survive){//UNTESTED
+function iterate(grid,birth,survive){
     if (typeof survive == "undefined"){
         survive = birth[1];
         birth = birth[0];
     }
-    for (var x = 0; x < board.length; x++) {
-        for (var y = 0; y < board[0].length; y++) {
+    for (var x = 0; x < grid.length; x++) {
+        for (var y = 0; y < grid[0].length; y++) {
             var reds = 0;
             var blues = 0;
             var total = 0;
@@ -140,7 +140,7 @@ function iterate(grid,birth,survive){//UNTESTED
                         if (i==0&&j==0){
                             continue;
                         }
-                        switch(board[x+i][y+j].currentState){//continue loop if dead
+                        switch(grid[x+i][y+j].currentState){//continue loop if dead
                             case 0: break;
                             case 1: 
                                 reds+=1;
@@ -174,17 +174,204 @@ function iterate(grid,birth,survive){//UNTESTED
             
         }
     }
-    for (var x = 0; x < board.length; x++) {
-        for (var y = 0; y < board[0].length; y++) {
-            grid[x][y].currentState=grid[x][y].nextState  ;          
+    for (var x = 0; x < grid.length; x++) {
+        for (var y = 0; y < grid[0].length; y++) {
+            grid[x][y].currentState=grid[x][y].nextState;          
         }
     }
     return grid;
 }
+
+function doMoves(board, moves, rules, player){//player is the player who's turn it is before any of the moves have been made
+    var size = board.length-1;
+    for(var i=0; i<moves.length; i++){
+        if(moves[i] === ''){
+            continue;
+        }
+        var move = moves[i].split('+')[0];
+        var type = move.slice(-1);
+        if(['A','B','C'].includes(type)){//kill or sacrifice
+            var x = B20.indexOf(moves[i].charAt(0));
+            var y = B20.indexOf(moves[i].charAt(1));
+            board[x][y].currentState = 0;
+        }
+        else if(type === 'D'){//summon
+            var x = B20.indexOf(moves[i].charAt(0));
+            var y = B20.indexOf(moves[i].charAt(1));
+            board[x][y].currentState = player;
+        }
+        else if(type === 'E'){
+            board = iterate(board,rules);
+            player = player%2+1;
+        }
+    }
+    return board;
+}
+
+function countItems(array, item){
+    var count = 0;
+    for (var i=0; i<array.length; i++){
+        if (array[i] === item){
+            count++;
+        }
+    }
+    return count;
+}
+
+function checkLegit(gamestring, board, player, move){//player is the player requesting the move
+    var parts = gamestring.split(',');
+    var rules = parseRule(parts[0]);
+    var size = parseInt(parts[1]);
+    var testBoard = stringToBoard(parts[5],size);
+    var moves = parts.slice(6);
+    var movesMade = countItems(moves,'E');
+    var turn = movesMade%2+1;
+    var type = move.slice(-1);
+    var turnMoves = [];
+    var turnMoveTypes = [];
+    for (var i=moves.length-1; i>=0; i--){
+        if (moves[i] != ''){
+            if (moves[i]=='E'){
+                break;
+            }else{
+                turnMoves.push(moves[i]);
+                turnMoveTypes.push(moves[i].slice(-1))
+            }
+        }
+    }
+    turnMoves = turnMoves.reverse();
+    
+    if (turn!=player){
+        console.log('Wrong player');
+        return false
+    }
+    if (board.length != size || board[0].length != size){//different size than specified
+        console.log('Wrong size');
+        return false;
+    }
+    testBoard = doMoves(testBoard, moves, rules, 1);//game starts with player 1
+    if (!checkEqual(testBoard,board)){//board does not represent gamestring
+        console.log('Wrong board');
+        return false;
+    }
+    if (turnMoves.length > 3){
+        console.log(turnMoves);
+        console.log('too many moves either way');
+        return false;
+    }    
+    if (type === 'A'){
+        if (turnMoves.length!=0){
+            console.log('too many moves to kill');
+            return false;
+        }
+        try{
+            var x = B20.indexOf(move.charAt(0));
+            var y = B20.indexOf(move.charAt(1));
+            if (board[x][y].currentState==0){
+                console.log('can\'t kill dead cell');
+                return false;
+            }
+        }catch(err){//no coords are specified
+            console.log('no coords kill');
+            return false;
+        }
+    }else if(type === 'B'){
+        if (turnMoves.length!=1 || turnMoves[0].slice(-1)!='D'){//wrong preceding moves
+            console.log('need summon for 1st sacrifice');
+            return false;
+        }
+        try{
+            var x = B20.indexOf(move.charAt(0));
+            var y = B20.indexOf(move.charAt(1));
+            if (board[x][y].currentState!=player){//can only sacrifice self
+                console.log('1st sacrafice must be self');
+                return false;
+            }
+        }catch(err){//no coords are specified
+            console.log('no coords sac 1');
+            return false;
+        }
+    }else if(type === 'C'){
+        if (turnMoves.length!=2 || 
+            turnMoves[0].slice(-1)!='D' || turnMoves[1].slice(-1)!='B'){//wrong preceding moves
+            console.log('must have summon and first sacrifice');
+            return false;
+        }
+        try{
+            var x = B20.indexOf(move.charAt(0));
+            var y = B20.indexOf(move.charAt(1));
+            if (board[x][y].currentState!=player){//can only sacrifice self
+                console.log('2nd sacrifice must be self');
+                return false;
+            }
+        }catch(err){//no coords are specified
+            console.log('no coords sac 2');
+            return false;
+        }
+    }else if(type === 'D'){
+        if (turnMoves.length!=0){//wrong preceding moves
+            console.log('can only sum once');
+            return false;
+        }
+        try{
+            var x = B20.indexOf(move.charAt(0));
+            var y = B20.indexOf(move.charAt(1));
+            if (board[x][y].currentState!=0){//can only sacrifice self
+                console.log('can\'t summon non dead');
+                return false;
+            }
+        }catch(err){//no coords are specified
+            console.log('no coords sum');
+            return false;
+        }
+    }else if(type === 'E'){
+        if (turnMoves.length===3){
+            if (!(turnMoveTypes.includes('B')&&turnMoveTypes.includes('C')&&turnMoveTypes.includes('D'))){
+                console.log('summon not enough');
+                return false;
+            }
+        }else if(turnMoves.length===1){
+            if (!turnMoveTypes.includes('A')){
+                console.log('kill not enough');
+                return false;
+            }
+        }else{
+            console.log('wrong number of moves');
+            return false;
+        }
+    }else{
+        console.log('not a move');
+        return false;
+    }
+    return true;
+}
+
+function checkEqual(board1, board2){
+    if (board1.length != board2.length){
+        console.log('bad length',board1.length,board2.length);
+        return false;
+    }
+    if (board1[0].length != board2[0].length){
+        console.log('bad width')
+        return false;
+    }
+    for (var i=0; i<board1.length; i++){
+        for (var j=0; j<board1[0].length; j++){
+            if (board1[i][j].currentState != board2[i][j].currentState){
+                console.log('unequal cell',i,j)
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 try{
     module.exports.parseRule = parseRule;
     module.exports.newBoard = newBoard;
     module.exports.stringToBoard = stringToBoard;
     module.exports.boardToString = boardToString;
     module.exports.iterate = iterate;
+    module.exports.checkLegit = checkLegit;
+    module.exports.doMoves = doMoves;
 }catch(err){}

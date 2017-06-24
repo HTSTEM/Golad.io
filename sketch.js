@@ -698,7 +698,7 @@ if (online){
             BIRTH_COUNT = rules[0]
             STAY_COUNT = rules[1]
             GRID_HEIGHT = GRID_WIDTH = parseInt(parts[1])//size
-            gridTiles=stringToBoard(parts[5])
+            gridTiles=stringToBoard(parts[5],GRID_HEIGHT)
             checkNextStates();
             drawAll()
         }

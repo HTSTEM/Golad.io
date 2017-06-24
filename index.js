@@ -17,21 +17,33 @@ var ingame = []//keep track of ips with game, dummy variable for now
 io.on('connection', function(socket) {
     console.log('Connection Established.');
     var clientIp = socket.request.connection.remoteAddress;//used for continuing game
-    id = socket.id;
+    var player = 1;
+    var gameString = '';
+    var id = socket.id;
+    var board = [];
+    var rules = [];
     socket.on('undo',function(data){//TODO add stuff later
         console.log(clientIp+' undo '+data)
     });
     socket.on('move',function(data){
-        console.log(clientIp+' move '+data)
+        console.log(clientIp+' move '+data);
+        console.log(boardTools.checkLegit(gameString,board,player,data));
+        board = boardTools.doMoves(board, [data], rules, player);
+        gameString+=data+',';
     });
     socket.on('iterate',function(data){
-        console.log(clientIp+' iterate '+data)
+        console.log(clientIp+' iterate '+data);
+        console.log(boardTools.checkLegit(gameString,board,player,data));
+        board = boardTools.doMoves(board, [data], rules, player);
+        player = player%2+1;
+        gameString+=data+',';
     });
     socket.on('newgame',function(density,rule,size,timelimit,timebonus){
-        board = boardTools.newBoard(density,size)
-        toSend = rule+','+size+','+timelimit+','+timebonus+',0,'+boardTools.boardToString(board)+','
-        socket.emit('gameupdate',toSend)
-        console.log(toSend)
+        board = boardTools.newBoard(density,size);
+        rules = boardTools.parseRule(rule);
+        gameString = rule+','+size+','+timelimit+','+timebonus+',0,'+boardTools.boardToString(board)+',';
+        socket.emit('gameupdate',gameString);
+        console.log(gameString);
     });
 });
 
