@@ -22,21 +22,28 @@ io.on('connection', function(socket) {
     var id = socket.id;
     var board = [];
     var rules = [];
-    socket.on('undo',function(data){//TODO add stuff later
+    socket.on('undo',function(data){
         console.log(clientIp+' undo '+data)
+        //TODO Check for legitness, undo
     });
     socket.on('move',function(data){
         console.log(clientIp+' move '+data);
-        console.log(boardTools.checkLegit(gameString,board,player,data));
-        board = boardTools.doMoves(board, [data], rules, player);
-        gameString+=data+',';
+        var legit = boardTools.checkLegit(gameString,board,player,data)
+        console.log(legit);
+        if(legit){
+            board = boardTools.doMoves(board, [data], rules, player);
+            gameString+=data+',';
+        }
     });
     socket.on('iterate',function(data){
         console.log(clientIp+' iterate '+data);
-        console.log(boardTools.checkLegit(gameString,board,player,data));
-        board = boardTools.doMoves(board, [data], rules, player);
-        player = player%2+1;
-        gameString+=data+',';
+        var legit = boardTools.checkLegit(gameString,board,player,data)
+        console.log(legit);
+        if(legit){
+            board = boardTools.doMoves(board, [data], rules, player);
+            player = player%2+1;
+            gameString+=data+',';
+        }
     });
     socket.on('newgame',function(density,rule,size,timelimit,timebonus){
         board = boardTools.newBoard(density,size);
