@@ -689,6 +689,13 @@ $().ready(function () {
     $("#winner").hide();
     $("#titlescreen").fadeIn();
 });
+
+function requestMP(){
+    if (online){
+        socket.emit('mprequest');
+    }
+}
+
 if (online){
     socket.on('gameupdate', function (data){//update gamestring
         if (!data.includes(gameString)||gameString===''){
@@ -704,6 +711,9 @@ if (online){
         }
         gameString = data;
         console.log(gameString);
+    });
+    socket.on('redirect', function (data){//update gamestring
+        window.location.href = data;
     });
 }
 
