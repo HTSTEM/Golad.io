@@ -35,8 +35,10 @@ io.on('connection', function(socket) {
         socket.emit('beginMP');
     }
     socket.on('undo',function(data){
-        console.log(clientIp+' undo '+data)
-        //TODO Check for legitness, undo
+        console.log(clientIp+' undo '+data);
+        gameString = boardTools.tryUndo(gameString,data,player);
+        console.log(gameString);
+        board = boardTools.remakeBoard(gameString);
     });
     socket.on('move',function(data){
         console.log(clientIp+' move '+data);

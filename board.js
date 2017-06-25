@@ -366,6 +366,67 @@ function checkEqual(board1, board2){
     return true;
 }
 
+function remakeBoard(gamestring){
+    var parts = gamestring.split(",");
+    var rules = parseRule(parts[0]);
+    var size = parseInt(parts[1]);
+    var board = stringToBoard(parts[5], size);
+    var moves = parts.slice(6);
+    board = doMoves(board, moves, rules, 1);
+    return board;
+}
+
+function tryUndo(gamestring, undo, player){
+    var parts = gamestring.split(',');
+    var moves = parts.slice(6);
+    var index = moves.indexOf("");
+    if (index!=-1){
+        moves.splice(index, 1);
+    }
+    
+    var turn = countItems(moves,'E')%2+1;
+    if (turn!=player || moves.slice(-1)[0]=='E'){//move commited or move just started
+        return gamestring;
+    }
+    
+    var turnMoves = [];
+    for (var i=moves.length-1; i>=0; i--){
+        if (moves[i] != ''){
+            if (moves[i]=='E'){
+                break;
+            }else{
+                turnMoves.push(moves[i]);
+            }
+        }
+    }
+    turnMoves.reverse();
+    moves.splice(-turnMoves.length,turnMoves.length)
+    if(undo=='all'){
+        turnMoves = [];
+    }else if(undo.length == 2){
+        for(var i=0; i<turnMoves.length; i++){
+            if (turnMoves[i].slice(0,2)==undo){
+                index = i;
+                break;
+            }
+        }
+        var type = turnMoves[i].slice(-1)[0];
+        if (type=='A' || type=='D'){
+            turnMoves = [];
+        }else if(type=='C' || type=='B'){
+            turnMoves.splice(index,1);
+            for (var i=0; i<turnMoves.length; i++){
+                if (turnMoves[i].slice(-1)[0] == 'C'){
+                    turnMoves[i] = turnMoves[i].slice(0,2)+'B';
+                }
+            }
+        }
+    }
+
+    parts = parts.slice(0,6).concat(moves).concat(turnMoves);
+    return parts.join()+",";
+}
+
 try{
     module.exports.parseRule = parseRule;
     module.exports.newBoard = newBoard;
@@ -374,4 +435,6 @@ try{
     module.exports.iterate = iterate;
     module.exports.checkLegit = checkLegit;
     module.exports.doMoves = doMoves;
+    module.exports.tryUndo = tryUndo;
+    module.exports.remakeBoard = remakeBoard;
 }catch(err){}

@@ -728,7 +728,6 @@ if (online){
         window.location.href = data;
     });
     socket.on('beginMP', function (){
-        console.log("hi");
         setupGame();
     });
 }
