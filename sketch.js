@@ -590,14 +590,17 @@ function growTiles() {
                 alert("It's a draw!");
                 $("#playing").fadeOut();
                 $("#titlescreen").show();
+                console.log("fuck");
             } else if (cc.red == 0) {
                 alert("Blue won!");
                 $("#playing").fadeOut();
                 $("#titlescreen").show();
+                console.log("fuck");
             } else if (cc.blue == 0) {
                 alert("Red won!");
                 $("#playing").fadeOut();
                 $("#titlescreen").show();
+                console.log("fuck");
             }
         }
     }
@@ -616,7 +619,6 @@ $(window).resize(function () {
     canvas.width = getCW();
     canvas.height = getCH();
     $("#gameCanvas").offset($("#mainGame").position());
-
     drawAll();
 });
 
@@ -636,12 +638,22 @@ $("#end").bind('touchstart click', function (event) {
     }
 });
 $("#playbtn").bind('touchstart click', function (event) {
+    online = false;
     $("#playing").show();
     $("#winner").hide();
     $("#titlescreen").fadeOut(function () {setupGame();});
 });
-
+$("#onlnbtn").bind('touchstart click', function (event) {
+    if(online){
+        requestMP();
+    }else{
+        window.alert("You are not online.");
+    }
+});
 function setupGame () {
+    $("#playing").show();
+    $("#winner").hide();
+    $("#titlescreen").hide;
     canvas = document.getElementById("gameCanvas");
     ctx = canvas.getContext("2d");
     $("#gameCanvas").offset($("#mainGame").position());
@@ -654,6 +666,7 @@ function setupGame () {
     console.log("Welcome to GOLAD.io V0.0.1");
     console.log("Spawning grid...");
     if (online){
+        console.log('emitting');
         socket.emit('newgame',0.5,RULE_STRING,GRID_WIDTH,99999,99999);
     }else{
         gridTiles = newBoard(0.5,GRID_WIDTH);
@@ -685,9 +698,11 @@ function makeString(){
 
 
 $().ready(function () {
-    $("#playing").hide();
-    $("#winner").hide();
-    $("#titlescreen").fadeIn();
+    if (window.location.href.split('/').slice(-1)[0]=='' || !online){
+        $("#playing").hide();
+        $("#winner").hide();
+        $("#titlescreen").fadeIn();
+    }
 });
 
 function requestMP(){
@@ -712,8 +727,12 @@ if (online){
         gameString = data;
         console.log(gameString);
     });
-    socket.on('redirect', function (data){//update gamestring
+    socket.on('redirect', function (data){
         window.location.href = data;
+    });
+    socket.on('beginMP', function (){
+        console.log("hi");
+        setupGame();
     });
 }
 

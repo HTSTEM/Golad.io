@@ -6,7 +6,7 @@ const app = require('express')();
 const http = require('http').createServer(app);
 const io = new require('socket.io')(http);
 
-app.set('port', (process.env.PORT || 80));
+app.set('port', (process.env.PORT || 8080));
 //app.use("", express.static(__dirname));
 app.all('*', function(req, res){
     console.log(req.path);
@@ -29,6 +29,11 @@ io.on('connection', function(socket) {
     var id = socket.id;
     var board = [];
     var rules = [];
+    var path = socket.request.headers.referer;
+    path = path.split('/').slice(-1)[0];//get last item
+    if (path != ""){
+        socket.emit('beginMP');
+    }
     socket.on('undo',function(data){
         console.log(clientIp+' undo '+data)
         //TODO Check for legitness, undo
