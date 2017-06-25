@@ -590,17 +590,14 @@ function growTiles() {
                 alert("It's a draw!");
                 $("#playing").fadeOut();
                 $("#titlescreen").show();
-                console.log("fuck");
             } else if (cc.red == 0) {
                 alert("Blue won!");
                 $("#playing").fadeOut();
                 $("#titlescreen").show();
-                console.log("fuck");
             } else if (cc.blue == 0) {
                 alert("Red won!");
                 $("#playing").fadeOut();
                 $("#titlescreen").show();
-                console.log("fuck");
             }
         }
     }
