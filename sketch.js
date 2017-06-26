@@ -47,7 +47,7 @@ var moveFinished = false;
 var creationTile = [];
 var stolenTiles = [];
 var origCol = 0;
-var currentMove = {1: "A", 2: "A"};
+var moveNumber = {curr: [1,"A"], max: [1,"A"]};
 
 var turnNumber = 1;
 
@@ -166,20 +166,20 @@ function checkNextStates() {
 }
 
 function gameOfLifeTick() {
-    if (currentPlayer == 2) {
-        turnNumber++;
 
-        currentMove[1] = "A";
-        currentMove[2] = "A";
-    }
-
+    turnNumber++;
+    console.log(turnNumber);
+    moveNumber.curr = [turnNumber,"A"];
+    moveNumber.max = moveNumber.curr;
+    console.log(moveNumber);
+    
     moveStarted = false;
     moveFinished = false;
     stolenTiles = [];
     creationTile = [];
     origCol = 0;
     $("#end").addClass("locked");
-    $("#turn").text(turnNumber + currentMove[1] + " / " + turnNumber + currentMove[2]);
+    $("#turn").text(moveNumber.curr.join('') + " / " + moveNumber.max.join(''));
 
     if (currentPlayer == 1)
         currentPlayer = 2;
@@ -483,7 +483,7 @@ function mouseChangeMove (event) {
                             gridTiles[x][y].currentState = 0;
                             moveStarted = true;
                             moveFinished = true;
-                            currentMove[currentPlayer] = "B";
+                            moveNumber.curr[1] = "B";
                             creationTile = "[" + x + "," + y + "]";
                             action={type:'move',move:B20[x]+B20[y]+'A'};//send message
                         }//undo full move
@@ -496,7 +496,7 @@ function mouseChangeMove (event) {
                             stolenTiles = [];
                             moveStarted = false;
                             moveFinished = false;
-                            currentMove[currentPlayer] = "A";
+                            moveNumber.curr[1] = "A";
                             creationTile = null;
                             action={type:'undo',move:'all'};//undo moves up to last E (handled by server)
                         }
@@ -504,10 +504,10 @@ function mouseChangeMove (event) {
                             gridTiles[x][y].currentState = currentPlayer;
 
                             stolenTiles.splice(stolenTiles.indexOf("[" + x + "," + y + "]"), 1);
-                            if (currentMove[currentPlayer] == "D")
-                                currentMove[currentPlayer] = "C";
-                            else if (currentMove[currentPlayer] == "C")
-                                currentMove[currentPlayer] = "B";
+                            if (moveNumber.curr[1] == "D")
+                                moveNumber.curr[1] = "C";
+                            else if (moveNumber.curr[1] == "C")
+                                moveNumber.curr[1] = "B";
                             moveStarted = true;
                             moveFinished = false;
                             action={type:'undo',move:B20[x]+B20[y]};//send message
@@ -521,7 +521,7 @@ function mouseChangeMove (event) {
                             stolenTiles = [];
                             moveStarted = false;
                             moveFinished = false;
-                            currentMove[currentPlayer] = "A";
+                            moveNumber.curr[1] = "A";
                             creationTile = null;
                             action={type:'undo',move:'all'};
                         }
@@ -529,7 +529,7 @@ function mouseChangeMove (event) {
                             gridTiles[x][y].currentState = currentPlayer + 3;
                             moveStarted = true;
                             moveFinished = false;
-                            currentMove[currentPlayer] = "B";
+                            moveNumber.curr[1]= "B";
                             creationTile = "[" + x + "," + y + "]";
                             action={type:'move',move:B20[x]+B20[y]+"D"};
                         }
@@ -537,25 +537,27 @@ function mouseChangeMove (event) {
                             origCol = gridTiles[x][y].currentState;
                             gridTiles[x][y].currentState = 0;
                             stolenTiles.push("[" + x + "," + y + "]");
-                            currentMove[currentPlayer] = "C";
+                            moveNumber.curr[1] = "C";
                             if (stolenTiles.length >= 2) {
-                                currentMove[currentPlayer] = "D";
+                                moveNumber.curr[1] = "D";
                                 moveFinished = true;
                                 action={type:'move',move:B20[x]+B20[y]+"C"};
                             }else{
                                 action={type:'move',move:B20[x]+B20[y]+"B"};
                             }
                         }
-                        if (online && action!=null){
-                            socket.emit(action.type,action.move)
-                        }else if(action.type=='move'){
-                            gameString += action.move+",";
-                        }else if(action.type=='undo'){
-                            gameString = tryUndo(gameString,action.move,currentPlayer);
+                        if (action!=null){
+                            if (online){
+                                socket.emit(action.type,action.move)
+                            }else if(action.type=='move'){
+                                gameString += action.move+",";
+                            }else if(action.type=='undo'){
+                                gameString = tryUndo(gameString,action.move,currentPlayer);
+                            }
                         }
-
+                        moveNumber.max = moveNumber.curr;
                         var turn = $("#turn");
-                        turn.text(turnNumber + currentMove[1] + " / " + turnNumber + currentMove[2]);
+                        turn.text(moveNumber.curr.join('') + " / " + moveNumber.max.join(''));
 
                         checkNextStates();
                         checkNextStates();
