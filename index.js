@@ -1,4 +1,4 @@
-const fs = require('fs');
+
 const boardTools = require('./board')
 
 const express = require("express");
@@ -67,7 +67,6 @@ io.on('connection', function(socket) {
         console.log(gameString);
     });
     socket.on('mprequest',function(){
-        var fs = require('fs');
         var dir = randStr(16);
         console.log(dir)
         socket.emit('redirect','/'+dir)
