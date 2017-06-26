@@ -708,18 +708,37 @@ function requestMP(){
     }
 }
 
+function playOut(moves){
+    if (moves.length!=0){
+        var move = moves[0];
+        var type = move.slice(-1)[0];
+        if (type=='E'){
+            checkNextStates();
+            gameOfLifeTick();//animations!
+        }else{
+            gridTiles = doMoves(gridTiles,[move],[BIRTH_COUNT,STAY_COUNT],currentPlayer);
+        }
+        checkNextStates();
+        drawAll();
+        setTimeout(playOut,1000,moves.slice(1));//play next move after 1 second
+    }else{
+        drawAll();
+    }
+}
+
 if (online){
     socket.on('gameupdate', function (data){//update gamestring
-        if (!data.includes(gameString)||gameString===''){
-            parts = data.split(',')
-            RULE_STRING = parts[0]
-            rules = parseRule(parts[0])//rule
-            BIRTH_COUNT = rules[0]
-            STAY_COUNT = rules[1]
-            GRID_HEIGHT = GRID_WIDTH = parseInt(parts[1])//size
-            gridTiles=stringToBoard(parts[5],GRID_HEIGHT)
+        if (!data.includes(gameString)||gameString===''){//new game
+            var moves=data.split(",").slice(6);
+            var movesMade = countItems(moves,'E');
+            currentPlayer = movesMade%2+1;
+            otherPlayer = (movesMade+1)%2+1;
+            gridTiles = remakeBoard(data);
             checkNextStates();
-            drawAll()
+            drawAll();
+        }else if(data.includes(gameString)){//play out moves
+            var newMoves = data.replace(gameString,'');
+            playOut(newMoves.split(","));
         }
         gameString = data;
         console.log(gameString);
