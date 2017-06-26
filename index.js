@@ -1,5 +1,6 @@
 const boardTools = require('./board')
 
+const fs = require('fs');
 const uuidv4 = require('uuid/v4');
 const express = require("express");
 const app = require('express')();
@@ -65,6 +66,12 @@ io.on('connection', function(socket) {
         gameString = rule+','+size+','+timelimit+','+timebonus+',0,'+boardTools.boardToString(board)+',';
         socket.emit('gameupdate',gameString);
         console.log(gameString);
+        var json = {
+            "p1":[clientIp,"Player 1"],//get name later
+            "gameString":gameString,
+            "board":board
+        };
+        fs.writeFile('./games/'+path+'.json',JSON.stringify(json));
     });
     socket.on('mprequest',function(){
         var dir = uuidv4().replace(/-/g,'');
