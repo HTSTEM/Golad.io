@@ -194,6 +194,7 @@ function gameOfLifeTick() {
 
     for (var x = 0; x < GRID_WIDTH; x++) {
         for (var y = 0; y < GRID_HEIGHT; y++) {
+            //console.log(gridTiles[x][y].currentState,gridTiles[x][y].nextState);
             if (gridTiles[x][y].currentState != gridTiles[x][y].nextState) {
                 gridTiles[x][y].currentState = gridTiles[x][y].nextState;
                 changedTiles.push({x:x, y:y});
@@ -576,6 +577,7 @@ function growTiles() {
         }
 
         var st = performance.now();
+        console.log(changedTiles.length);
         for (var i = 0; i < changedTiles.length; i++) {
             refreshTile(changedTiles[i].x, changedTiles[i].y);
             redrawTile(changedTiles[i].x, changedTiles[i].y);
@@ -713,13 +715,26 @@ function playOut(moves){
         var move = moves[0];
         var type = move.slice(-1)[0];
         if (type=='E'){
-            checkNextStates();
+            moveStarted = true;
+            moveFinished = true;
             gameOfLifeTick();//animations!
         }else{
-            gridTiles = doMoves(gridTiles,[move],[BIRTH_COUNT,STAY_COUNT],currentPlayer);
+            var x = B20.indexOf(move[0]);
+            var y = B20.indexOf(move[1]);
+            if(type=='D'){
+                gridTiles[x][y].currentState = currentPlayer + 2;
+                creationTile = "[" + x + "," + y + "]";
+            }else if(type=='B' || type=='C'){
+                gridTiles[x][y].currentState = 0;
+                stolenTiles.push("[" + x + "," + y + "]");
+            }else if(type=='A'){
+                gridTiles[x][y].currentState = 0;
+                creationTile = "[" + x + "," + y + "]";
+            }
+            checkNextStates();
+            checkNextStates();
+            drawAll();
         }
-        checkNextStates();
-        drawAll();
         setTimeout(playOut,1000,moves.slice(1));//play next move after 1 second
     }else{
         drawAll();
@@ -732,7 +747,6 @@ if (online){
             var moves=data.split(",").slice(6);
             var movesMade = countItems(moves,'E');
             currentPlayer = movesMade%2+1;
-            otherPlayer = (movesMade+1)%2+1;
             gridTiles = remakeBoard(data);
             checkNextStates();
             drawAll();
