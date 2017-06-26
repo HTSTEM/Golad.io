@@ -1,6 +1,6 @@
-
 const boardTools = require('./board')
 
+const uuidv4 = require('uuid/v4');
 const express = require("express");
 const app = require('express')();
 const http = require('http').createServer(app);
@@ -67,19 +67,19 @@ io.on('connection', function(socket) {
         console.log(gameString);
     });
     socket.on('mprequest',function(){
-        var dir = randStr(16);
+        var dir = uuidv4().replace(/-/g,'');
         console.log(dir)
         socket.emit('redirect','/'+dir)
     });
 });
 
-function randStr(length){
+/*function randStr(length){
     var text = "";
     var charset = "abcdefghijklmnopqrstuvwxyz0123456789";
     for(var i=0; i < length; i++)
         text += charset.charAt(Math.floor(Math.random() * charset.length));
     return text;
-}
+}*/
 
 // Start HTTP server on Heroku port or 5000
 http.listen(app.get('port'), function(){
