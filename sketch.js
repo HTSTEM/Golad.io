@@ -30,6 +30,9 @@ var FANCY_MIDDLE = true;
 var BIRTH_COUNT = [3];
 var STAY_COUNT = [2,3];
 var RULE_STRING = "B" + BIRTH_COUNT.join("") + "/" + "S" + STAY_COUNT.join("");
+var THIS_PLAYER = 0;//MP game only 1=red, 2=blue, anything else=spectating7
+var P1NAME = 'Player 1';
+var P2NAME = 'Player 2';
 
 var canvas;
 var gridTiles;
@@ -48,6 +51,7 @@ var creationTile = [];
 var stolenTiles = [];
 var origCol = 0;
 var moveNumber = {curr: [1,"A"], max: [1,"A"]};
+var gameEnd = false;
 
 var turnNumber = 1;
 
@@ -103,8 +107,14 @@ function textOntoTile(x, y, text) {
     ctx.fillText(text, xp, yp);
 }
 
-function drawAll() {
+function drawText(){
     $("#ruleset").text(RULE_STRING);
+    $("#p1name").html(P1NAME);
+    $("#p2name").html(P2NAME);
+}
+
+function drawAll() {
+    drawText();
 
     ctx.fillStyle = BLACK;
     ctx.fillRect(
@@ -779,6 +789,35 @@ function playOut(moves){
     }
 }
 
+function getEndgameMessage(endtype){
+    var p1 = P1NAME;
+    var p1s = P1NAME;
+    var p1pos = P1NAME + "'s";
+    var p2 = P2NAME;
+    var p2s = P2NAME;
+    var p2pos = P2NAME + "'s";
+    if (THIS_PLAYER==1){//grammatical correctness is hard
+        p1s = 'You';
+        p1 = 'you';
+        p1pos = 'your';
+    }else if(THIS_PLAYER==2){
+        p2s = 'You';
+        p1 = 'you';
+        p2pos = 'your';
+    }
+    switch(endtype){
+        case 0: return p2s+' was wiped out and '+p1+' won!';
+        case 1: return p2s+' ran out of time and '+p1+' won!';
+        case 2: return p2s+' resigned and '+p1+' won!';
+        case 3: return p1s+' was wiped out and '+p2+' won!';
+        case 4: return p1s+' ran out of time and '+p2+' won!';
+        case 5: return p1s+' resigned and '+p2+' won!';
+        case 6: return 'Both populations were wiped out simultaneously.';
+        case 7: return p2s+' accepted '+p1pos+' offer for a draw.';
+        case 8: return p1s+' accepted '+p2pos+' offer for a draw.';
+    }
+}
+
 if (online){
     socket.on('gameupdate', function (data){//update gamestring
         if (!data.includes(gameString)||gameString===''){//new game
@@ -801,6 +840,23 @@ if (online){
     socket.on('beginMP', function (){
         setupGame();
     });
+    socket.on('gameEnd', function (data){
+        gameEnd = true;
+        gameString += data;
+        var type = data.charCodeAt(0)-70;//70=F
+        var message = getEndgameMessage(type);
+        window.alert(message);
+        
+    });
+    socket.on('setName', function (player, name){
+        switch(player){
+            case 1:
+                P1NAME = name;
+                break;
+            case 2:
+                P2NAME = name;
+                break;
+        }
+        drawText();
+    });
 }
-
-
