@@ -3,8 +3,9 @@
  0: Dead
  1: Red
  2: Blue
- 3: Half-created red
+ 3: Neutral
  4: Half-created red
+ 5: Half-created red
  */
 var socket;
 var online=true;
@@ -23,10 +24,11 @@ var BLUE = "#0066ff"; //"#30A7C2";
 var DARK_BLUE = "#26869B";
 var GREY = "#262626"; //"#333333";
 var BLACK = "#000000"; //"#222222";
+var WHITE = "#ffffff"
 var FANCY_MIDDLE = true;
 
 var BIRTH_COUNT = [3];
-var STAY_COUNT = [2, 3];
+var STAY_COUNT = [2,3];
 var RULE_STRING = "B" + BIRTH_COUNT.join("") + "/" + "S" + STAY_COUNT.join("");
 
 var canvas;
@@ -140,20 +142,24 @@ function checkNextStates() {
             var n = getNeighbours(x, y);
 
             if (BIRTH_COUNT.includes(n) && gridTiles[x][y].currentState == 0) {
-                var rn = getRedNeighbours(x, y);
-                if (n - rn < rn)
+                var rn = getColouredNeighbours(x, y, 1);
+                var bn = getColouredNeighbours(x, y, 2);
+                if (rn>bn){
                     gridTiles[x][y].nextState = 1;
-                else
+                }else if(bn>rn){
                     gridTiles[x][y].nextState = 2;
+                }else if(rn==bn){
+                    gridTiles[x][y].nextState = 3;
+                }
             }
             else if (!(STAY_COUNT.includes(n))) {
                 gridTiles[x][y].nextState = 0;
             }
             else {
-                if (gridTiles[x][y].currentState <= 2)
+                if (gridTiles[x][y].currentState <= 3)
                     gridTiles[x][y].nextState = gridTiles[x][y].currentState;
                 else
-                    gridTiles[x][y].nextState = gridTiles[x][y].currentState - 2;
+                    gridTiles[x][y].nextState = gridTiles[x][y].currentState - 3;
             }
         }
     }
@@ -231,27 +237,28 @@ function getNeighbours(x, y) {
     return neighbours;
 }
 
-function getRedNeighbours(x, y) {
-    var redNeighbours = 0;
+function getColouredNeighbours(x, y, colour) {
+    var colouredNeighbours = 0;
 
     for (var dx = -1; dx < 2; dx++) {
         for (var dy = -1; dy < 2; dy++) {
             if (x + dx >= 0 && x + dx < GRID_WIDTH && y + dy >= 0 && y + dy < GRID_HEIGHT) {
                 if (!(dx == 0 && dy == 0)) {
-                    if (gridTiles[x + dx][y + dy].currentState == 1 || gridTiles[x + dx][y + dy].currentState == 3) {
-                        redNeighbours += 1;
+                    if (gridTiles[x + dx][y + dy].currentState == colour || gridTiles[x + dx][y + dy].currentState == colour+3) {
+                        colouredNeighbours += 1;
                     }
                 }
             }
         }
     }
 
-    return redNeighbours;
+    return colouredNeighbours;
 }
 
 function getCellsCount() {
     var redCells = 0;
     var blueCells = 0;
+    var whiteCells = 0;
 
     for (var y = 0; y < GRID_HEIGHT; y++) {
         for (var x = 0; x < GRID_WIDTH; x++) {
@@ -259,10 +266,13 @@ function getCellsCount() {
                 redCells ++;
             else if (gridTiles[x][y].currentState == 2)
                 blueCells ++;
+            else if(gridTiles[x][y].currentState == 3){
+                whiteCells ++;
+            }
         }
     }
 
-    return {red: redCells, blue: blueCells};
+    return {red: redCells, blue: blueCells, white: whiteCells};
 }
 
 function refreshTile(x, y) {
@@ -290,7 +300,7 @@ function redrawTile(x, y) {
     var y_abs;
     var size;
 
-    if (gridTiles[x][y].currentState <= 2) {
+    if (gridTiles[x][y].currentState <= 3) {
         switch (gridTiles[x][y].currentState) {
             case 0:
                 ctx.fillStyle = GREY;
@@ -300,6 +310,9 @@ function redrawTile(x, y) {
                 break;
             case 2:
                 ctx.fillStyle = BLUE;
+                break;
+            case 3:
+                ctx.fillStyle = WHITE;
                 break;
         }
 
@@ -322,6 +335,9 @@ function redrawTile(x, y) {
             case 2:
                 ctx.fillStyle = BLUE;
                 break;
+            case 3:
+                ctx.fillStyle = WHITE;
+                break;
         }
 
         x_abs = xOff + x * (tileSize + TILE_PADDING) + (tileSize / 3) + 1 + ((tileSize / 3 - 2) / 100) * (100 - tileSizePerc) / 2;
@@ -334,10 +350,10 @@ function redrawTile(x, y) {
             size);
     } else {
         switch (gridTiles[x][y].currentState) {
-            case 3:
+            case 4:
                 ctx.fillStyle = RED;
                 break;
-            case 4:
+            case 5:
                 ctx.fillStyle = BLUE;
                 break;
         }
@@ -363,10 +379,10 @@ function redrawTile(x, y) {
             size);
 
         switch (gridTiles[x][y].currentState) {
-            case 3:
+            case 4:
                 ctx.fillStyle = RED;
                 break;
-            case 4:
+            case 5:
                 ctx.fillStyle = BLUE;
                 break;
         }
@@ -414,6 +430,9 @@ function redrawTile(x, y) {
             case 2:
                 ctx.fillStyle = BLUE;
                 break;
+            case 3:
+                ctx.fillStyle = WHITE;
+                break;
         }
 
         x_abs = xOff + x * (tileSize + TILE_PADDING) + (tileSize / 3) + 1;
@@ -458,7 +477,7 @@ function mouseChangeMove (event) {
                         }else{
                             otherPlayer = 1;
                         }
-                        if ((gridTiles[x][y].currentState == currentPlayer || gridTiles[x][y].currentState == otherPlayer) && 
+                        if ((gridTiles[x][y].currentState != 0 && gridTiles[x][y].currentState <= 3) && 
                             !moveStarted) {//kill any cell
                             origCol = gridTiles[x][y].currentState;
                             gridTiles[x][y].currentState = 0;
@@ -493,7 +512,7 @@ function mouseChangeMove (event) {
                             moveFinished = false;
                             action={type:'undo',move:B20[x]+B20[y]};//send message
                         }
-                        else if (gridTiles[x][y].currentState == currentPlayer + 2) {//unbirth cell
+                        else if (gridTiles[x][y].currentState == currentPlayer + 3) {//unbirth cell
                             origCol = gridTiles[x][y].currentState;
                             gridTiles[x][y].currentState = 0;
                             for (i = 0; i < stolenTiles.length; i ++) {
@@ -506,8 +525,8 @@ function mouseChangeMove (event) {
                             creationTile = null;
                             action={type:'undo',move:'all'};
                         }
-                        else if (gridTiles[x][y].currentState != otherPlayer && !moveStarted) {//birth tile
-                            gridTiles[x][y].currentState = currentPlayer + 2;
+                        else if (gridTiles[x][y].currentState == 0 && !moveStarted) {//birth tile
+                            gridTiles[x][y].currentState = currentPlayer + 3;
                             moveStarted = true;
                             moveFinished = false;
                             currentMove[currentPlayer] = "B";
@@ -702,13 +721,12 @@ function setupGame () {
     }
 }
 
-function makeString(){
+function makeString(){//I don't think we need this. Keep it for now.
     var string = RULE_STRING+',';
     string += GRID_WIDTH +',';
     string += '99999,99999,';//time stuff for now
     string += '0,';//No AI for now
     string += boardToString(gridTiles)+',';
-    //TODO move tracker
     return string
 }
 
@@ -740,7 +758,7 @@ function playOut(moves){
             var x = B20.indexOf(move[0]);
             var y = B20.indexOf(move[1]);
             if(type=='D'){
-                gridTiles[x][y].currentState = currentPlayer + 2;
+                gridTiles[x][y].currentState = currentPlayer + 3;
                 creationTile = "[" + x + "," + y + "]";
             }else if(type=='B' || type=='C'){
                 gridTiles[x][y].currentState = 0;
