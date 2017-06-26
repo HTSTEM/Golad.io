@@ -208,6 +208,8 @@ function gameOfLifeTick() {
     growTiles();
     if (online){
         socket.emit('iterate','E')//send iterate message
+    }else{
+        gameString+='E,';
     }
 }
 
@@ -527,6 +529,10 @@ function mouseChangeMove (event) {
                         }
                         if (online && action!=null){
                             socket.emit(action.type,action.move)
+                        }else if(action.type=='move'){
+                            gameString += action.move+",";
+                        }else if(action.type=='undo'){
+                            gameString = tryUndo(gameString,action.move,currentPlayer);
                         }
 
                         var turn = $("#turn");
@@ -577,7 +583,6 @@ function growTiles() {
         }
 
         var st = performance.now();
-        console.log(changedTiles.length);
         for (var i = 0; i < changedTiles.length; i++) {
             refreshTile(changedTiles[i].x, changedTiles[i].y);
             redrawTile(changedTiles[i].x, changedTiles[i].y);
@@ -589,14 +594,17 @@ function growTiles() {
         } else {
             var cc = getCellsCount();
             if (cc.red == 0 && cc.blue == 0) {
+                gameString+='L';
                 alert("It's a draw!");
                 $("#playing").fadeOut();
                 $("#titlescreen").show();
             } else if (cc.red == 0) {
+                gameString+='I';
                 alert("Blue won!");
                 $("#playing").fadeOut();
                 $("#titlescreen").show();
             } else if (cc.blue == 0) {
+                gameString+='F';
                 alert("Red won!");
                 $("#playing").fadeOut();
                 $("#titlescreen").show();
@@ -647,6 +655,15 @@ $("#onlnbtn").bind('touchstart click', function (event) {
         requestMP();
     }else{
         window.alert("You are not online.");
+    }
+});
+$("#getbtn").bind('touchstart click', function (event) {
+    if (gameString == ''){
+        window.alert("There is no game.");
+    }else if (gameString.slice(-1)[0]==","){
+        window.prompt("Here's the gamestring!",gameString.slice(0,-1));
+    }else{
+        window.prompt("Here's the gamestring!",gameString);
     }
 });
 function setupGame () {
@@ -714,6 +731,7 @@ function playOut(moves){
     if (moves.length!=0){
         var move = moves[0];
         var type = move.slice(-1)[0];
+        console.log(move)
         if (type=='E'){
             moveStarted = true;
             moveFinished = true;
