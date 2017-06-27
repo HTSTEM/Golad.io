@@ -754,7 +754,6 @@ $().ready(function () {
         $("#playing").show();
         $("#winner").hide();
         $("#titlescreen").hide();
-        setupGame();
     }
 });
 

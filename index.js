@@ -8,6 +8,15 @@ const io = new require('socket.io').listen(http);
 const boardTools = require('./board')
 
 var clients = [];
+var games = [];
+
+fs.readdir('./games', function(err, items) {
+    console.log(items);
+    games = items;
+    for (var i=0; i<games.length; i++) {
+        games[i] = games[i].split('.')[0];//remove file ending
+    }
+});
 
 app.set('port', (process.env.PORT || 8080));
 //app.use("", express.static(__dirname));
@@ -40,8 +49,7 @@ function newSocket(namespace){
         var id = socket.id;
         var board = [];
         var rules = [];
-        var path = socket.request.headers.referer;
-        path = path.split('/').slice(-1)[0];//get last item
+        var path = namespace;
         if (path != ""){
             socket.emit('beginMP');
         }
@@ -71,20 +79,29 @@ function newSocket(namespace){
             }
         });
         socket.on('newgame',function(density,rule,size,timelimit,timebonus){
-            board = boardTools.newBoard(density,size);
-            rules = boardTools.parseRule(rule);
-            gameString = rule+','+size+','+timelimit+','+timebonus+',0,'+boardTools.boardToString(board)+',';
-            socket.emit('gameupdate',gameString);
-            console.log(gameString);
-            var json = {
-                "p1":[clientIp,"Player 1"],//get name later
-                "gameString":gameString,
-                "board":board
-            };
-            fs.writeFile('./games/'+path+'.json',JSON.stringify(json));
+            console.log(games,path);
+            if (games.includes(path)){
+                var gameData = JSON.parse(fs.readFileSync('./games/'+path+'.json', 'utf8'));
+                gameData.p2 = [clientIp,"Player 2"]
+                socket.emit("gameupdate",gameData.gameString);
+                fs.writeFile('./games/'+path+'.json',JSON.stringify(gameData));
+            }else{
+                board = boardTools.newBoard(density,size);
+                rules = boardTools.parseRule(rule);
+                gameString = rule+','+size+','+timelimit+','+timebonus+',0,'+boardTools.boardToString(board)+',';
+                socket.emit('gameupdate',gameString);
+                console.log(gameString);
+                var json = {
+                    "p1":[clientIp,"Player 1"],//get name later
+                    "gameString":gameString,
+                    "board":board
+                };
+                fs.writeFile('./games/'+path+'.json',JSON.stringify(json));
+                games.push(path);
+            }
         });
         socket.on('disconnect', function() {
-            client.log(clientIp, "Disconnected")
+            console.log(clientIp, "Disconnected")
             deleteFromArray(clients, socket.id);
         });
     });
