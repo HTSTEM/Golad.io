@@ -21,21 +21,25 @@
             </div>
             <div id="rhs">
                 <div class="row">
-                    <div class="menubtn"><div class="btninner"><div class="btntxt">Tutorial</div></div></div>
+                    <div class="menubtn" id="tutbtn"><div class="btninner"><div class="btntxt">Tutorial</div></div></div>
                 </div>
                 <div class="row">
-                    <div class="menubtn" id="playbtn"><div class="btninner"><div class="btntxt">New game</div></div></div>
+                    <div class="menubtn" id="playbtn"><div class="btninner"><div class="btntxt">New local game</div></div></div>
                 </div>
                 <div class="row">
-                    <div class="menubtn"><div class="btninner"><div class="btntxt">New online game</div></div></div>
+                    <div class="menubtn" id="onlnbtn"><div class="btninner"><div class="btntxt">New online game</div></div></div>
                 </div>
                 <div class="row">
-                    <div class="menubtn"><div class="btninner"><div class="btntxt">Resume Game</div></div></div>
+                    <div class="menubtn" id="rsmbtn"><div class="btninner"><div class="btntxt">Resume Game</div></div></div>
                 </div>
                 <div class="row">
                     <div class="minirow">
-                        <div class="menubtn-hlf"><div class="btninner"><div class="btntxt half">Get current game string</div></div></div>
-                        <div class="menubtn-hlf"><div class="btninner"><div class="btntxt half">Load game from stirng</div></div></div>
+                        <div class="menubtn-hlf" id="getbtn"><div class="btninner"><div class="btntxt half">
+                            Get current game string
+                        </div></div></div>
+                        <div class="menubtn-hlf" id="loadbtn"><div class="btninner"><div class="btntxt half">
+                            Load game from string
+                        </div></div></div>
                     </div>
                 </div>
                 <div class="row">
@@ -64,11 +68,13 @@
             <div id="hud">
                 <div id="tophalf">
                     <div id="ruleset">B0/S0</div>
-                    <div id="player1" class="">Player 1<br><br>
+                    <div id="player1" class="">
+                        <div id="p1name">Player 1</div><br><br>
                         <div id="player1-type">Human</div>
                         <div id="player1-count">&#x25FC&#xd7 0</div>
                     </div>
-                    <div id="player2" class="">Player 2<br><br>
+                    <div id="player2" class="">
+                        <div id="p2name">Player 2</div><br><br>
                         <div id="player2-type">Human</div>
                         <div id="player2-count">&#x25FC&#xd7 0</div>
                     </div>
