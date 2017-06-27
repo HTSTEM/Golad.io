@@ -10,7 +10,9 @@
 var socket;
 var online=true;
 try{
-     socket = io();
+    var nsp = window.location.href.split('/').slice(-1)[0];
+    console.log(nsp);
+    socket = io('/'+nsp);
 }catch(err){
     online=false;
 }
@@ -748,6 +750,11 @@ $().ready(function () {
         $("#playing").hide();
         $("#winner").hide();
         $("#titlescreen").fadeIn();
+    }else{
+        $("#playing").show();
+        $("#winner").hide();
+        $("#titlescreen").hide();
+        setupGame();
     }
 });
 
