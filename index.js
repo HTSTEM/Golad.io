@@ -47,58 +47,70 @@ function newSocket(namespace){
     nsp.on("connect",function(socket){
         var clientIp = socket.request.connection.remoteAddress;//used for continuing game
         var player = 1;//may have to change this all of this when 2 players are involved
-        var gameString = '';
         var id = socket.id;
-        var board = [];
-        var rules = [];
         var path = namespace;
         if (path != ""){
             socket.emit('beginMP');
         }
         socket.on('undo',function(data){
+            var gameData = JSON.parse(fs.readFileSync('./games/'+path+'.json', 'utf8'));
+            var oldString = gameData.gameString
             console.log(clientIp+' undo '+data);
-            gameString = boardTools.tryUndo(gameString,data,player);
-            console.log(gameString);
-            board = boardTools.remakeBoard(gameString);
+            gameData.gameString = boardTools.tryUndo(gameData.gameString,data,player);
+            if (oldString != gameData.gameString){
+                console.log(gameData.gameString);
+                gameData.board = boardTools.remakeBoard(gameData.gameString);
+                socket.broadcast.emit('gameupdate',gameData.gameString);
+                fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
+            }
         });
         socket.on('move',function(data){
+            var gameData = JSON.parse(fs.readFileSync('./games/'+path+'.json', 'utf8'));
             console.log(clientIp+' move '+data);
-            var legit = boardTools.checkLegit(gameString,board,player,data)
+            var legit = boardTools.checkLegit(gameData.gameString,gameData.board,player,data)
             console.log(legit);
             if(legit){
-                board = boardTools.doMoves(board, [data], rules, player);
-                gameString+=data+',';
+                gameData.board = boardTools.doMoves(gameData.board, [data], gameData.rules, player);
+                gameData.gameString += data+',';
+                socket.broadcast.emit('gameupdate',gameData.gameString);
+                fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
             }
         });
         socket.on('iterate',function(data){
+            var gameData = JSON.parse(fs.readFileSync('./games/'+path+'.json', 'utf8'));
             console.log(clientIp+' iterate '+data);
-            var legit = boardTools.checkLegit(gameString,board,player,data)
+            var legit = boardTools.checkLegit(gameData.gameString,gameData.board,player,data)
             console.log(legit);
             if(legit){
-                board = boardTools.doMoves(board, [data], rules, player);
+                gameData.board = boardTools.doMoves(gameData.board, [data], gameData.rules, player);
                 player = player%2+1;
-                gameString+=data+',';
+                gameData.gameString+=data+',';
+                socket.broadcast.emit('gameupdate',gameData.gameString);
+                fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
             }
         });
         socket.on('newgame',function(density,rule,size,timelimit,timebonus){
             if (games.includes(path)){
                 var json = fs.readFileSync('./games/'+path+'.json', 'utf8');
                 var gameData = JSON.parse(json);
-                gameData.p2 = [clientIp,"Player 2"]
+                if(gameData.p1[0]!=clientIp){
+                    gameData.p2 = [clientIp,"Player 2"];//get name later or smthn
+                }
                 socket.emit("gameupdate",gameData.gameString);
                 fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));//async file write breaks things
             }else{
-                board = boardTools.newBoard(density,size);
-                rules = boardTools.parseRule(rule);
-                gameString = rule+','+size+','+timelimit+','+timebonus+',0,'+boardTools.boardToString(board)+',';
-                socket.emit('gameupdate',gameString);
-                console.log(gameString);
-                var json = {
+                var board = boardTools.newBoard(density,size);
+                var rules = boardTools.parseRule(rule);
+                var gameString = rule+','+size+','+timelimit+','+timebonus+',0,'+boardTools.boardToString(board)+',';
+                var gameData = {
                     "p1":[clientIp,"Player 1"],//get name later
                     "gameString":gameString,
-                    "board":board
+                    "board":board,
+                    "rules":rules
                 };
-                fs.writeFile('./games/'+path+'.json',JSON.stringify(json));
+                socket.emit('gameupdate',gameData.gameString);
+                console.log(gameData.gameString);
+                fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
                 games.push(path);
             }
         });
