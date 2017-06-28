@@ -261,6 +261,7 @@ function checkLegit(gamestring, board, player, move){//player is the player requ
     }    
     if (type === 'A'){
         if (turnMoves.length!=0){
+            console.log(turnMoves);
             console.log('too many moves to kill');
             return false;
         }

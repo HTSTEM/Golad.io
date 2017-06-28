@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "An online version of CaryKH's GOLAD",
   "dependencies": {
+    "cookie-parser": "^1.4.3",
     "express": "^4.10.2",
     "socket.io": "^1.7.1",
     "uuid": "^3.1.0"

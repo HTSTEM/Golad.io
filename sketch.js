@@ -177,7 +177,7 @@ function checkNextStates() {
     }
 }
 
-function gameOfLifeTick() {
+function gameOfLifeTick(send=true) {
 
     turnNumber++;
     console.log(turnNumber);
@@ -225,7 +225,9 @@ function gameOfLifeTick() {
     tileSizePerc = 0;
     growTiles();
     if (online){
-        socket.emit('iterate','E')//send iterate message
+        if(send){
+            socket.emit('iterate','E')//send iterate message
+        }
     }else{
         gameString+='E,';
     }
@@ -771,7 +773,7 @@ function playOut(moves){
         if (type=='E'){
             moveStarted = true;
             moveFinished = true;
-            gameOfLifeTick();//animations!
+            gameOfLifeTick(false);//animations!
         }else{
             var x = B20.indexOf(move[0]);
             var y = B20.indexOf(move[1]);
