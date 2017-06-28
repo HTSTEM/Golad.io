@@ -11,7 +11,6 @@ var clients = [];
 var games = [];
 
 fs.readdir('./games', function(err, items) {
-    console.log(items);
     games = items;
     for (var i=0; i<games.length; i++) {
         games[i] = games[i].split('.')[0];//remove file ending
@@ -31,7 +30,10 @@ app.all('*', function(req, res){
 });
 
 io.on('connection', function(socket) {
-    console.log('Connection Established.');
+    var path = socket.request.headers.referer.split("/").slice(-1)[0];
+    if (path != '' && games.includes(path)){
+        newSocket(path);
+    }
     socket.on('mprequest',function(){
         var dir = uuidv4().replace(/-/g,'');//delete dashes
         console.log("joining",dir)
@@ -79,12 +81,12 @@ function newSocket(namespace){
             }
         });
         socket.on('newgame',function(density,rule,size,timelimit,timebonus){
-            console.log(games,path);
             if (games.includes(path)){
-                var gameData = JSON.parse(fs.readFileSync('./games/'+path+'.json', 'utf8'));
+                var json = fs.readFileSync('./games/'+path+'.json', 'utf8');
+                var gameData = JSON.parse(json);
                 gameData.p2 = [clientIp,"Player 2"]
                 socket.emit("gameupdate",gameData.gameString);
-                fs.writeFile('./games/'+path+'.json',JSON.stringify(gameData));
+                fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));//async file write breaks things
             }else{
                 board = boardTools.newBoard(density,size);
                 rules = boardTools.parseRule(rule);
