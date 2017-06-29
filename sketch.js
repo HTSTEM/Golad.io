@@ -32,7 +32,7 @@ var FANCY_MIDDLE = true;
 var BIRTH_COUNT = [3];
 var STAY_COUNT = [2,3];
 var RULE_STRING = "B" + BIRTH_COUNT.join("") + "/" + "S" + STAY_COUNT.join("");
-var THIS_PLAYER = 0;//MP game only 1=red, 2=blue, anything else=spectating7
+var THIS_PLAYER;//MP game only 1=red, 2=blue, anything else=spectating7
 var P1NAME = 'Player 1';
 var P2NAME = 'Player 2';
 
@@ -142,8 +142,7 @@ function drawAll() {
             redrawTile(x, y);
         }
     }
-    console.log(moveFinished);
-    if (moveFinished){
+    if (moveFinished && currentPlayer == THIS_PLAYER){
         $("#end").removeClass("locked");
     }else{
         $("#end").addClass("locked");
@@ -490,6 +489,9 @@ function containsObject(obj, list) {
 }
 
 function mouseChangeMove (event) {
+    if (THIS_PLAYER != currentPlayer){
+        return;
+    }
     for (var y = 0; y < GRID_HEIGHT; y++) {
         for (var x = 0; x < GRID_WIDTH; x++) {
             if (!(containsObject({x:x, y:y}, changedThisDrag))) {
@@ -769,7 +771,8 @@ function requestMP(){
 }
 
 function playOut(moves){
-    if (moves.length!=0){
+    console.log(moves);
+    if (moves.length!=0 && moves[0] != ''){
         var move = moves[0];
         var type = move.slice(-1)[0];
         console.log(move)
@@ -840,6 +843,8 @@ if (online){
             drawAll();
         }else if(data.includes(gameString)){//play out moves
             var newMoves = data.replace(gameString,'');
+            console.log("gamestring", gameString);
+            console.log("data", data);
             playOut(newMoves.split(","));
         }
         gameString = data;
@@ -871,10 +876,9 @@ if (online){
         drawText();
     });
     socket.on('setVars', function(vars, vals){
-        console.log(vals);
         for (var i = 0; i<vars.length; i++){
             window[vars[i]]=vals[i];
-            console.log(this[vars[i]]);
+            console.log(vars[i],window[vars[i]]);
         }
         drawAll();
     });

@@ -71,7 +71,7 @@ function newSocket(namespace){
         }
         socket.on('undo',function(data){
             var gameData = JSON.parse(fs.readFileSync('./games/'+path+'.json', 'utf8'));
-            var oldString = gameData.gameString
+            var oldString = gameData.gameString;
             console.log(clientId+' undo '+data);
             gameData.gameString = boardTools.tryUndo(gameData.gameString,data,player);
             if (oldString != gameData.gameString){
@@ -80,10 +80,7 @@ function newSocket(namespace){
                 fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
                 socket.broadcast.emit('gameupdate',gameData.gameString);
                 var moveStarted = true;
-                if (gameData.gameString.slice(-2)[0] == 'E'){
-                    moveStarted = false;
-                }
-                socket.broadcast.emit('setVars',["moveStarted","moveFinished"],[moveStarted,false]);
+                sendVariables(socket, gameData, clientId);
             }
         });
         socket.on('move',function(data){
@@ -96,15 +93,7 @@ function newSocket(namespace){
                 gameData.gameString += data+',';
                 fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
                 socket.broadcast.emit('gameupdate',gameData.gameString);
-                var moveStarted = true;
-                var moveFinished = false;
-                var lasttype = gameData.gameString.slice(-2)[0];
-                if (lasttype == 'E'){
-                    moveStarted = false;
-                }else if(lasttype == 'A' || lasttype == 'C'){
-                    moveFinished = true;
-                }
-                socket.broadcast.emit('setVars',["moveStarted","moveFinished"],[moveStarted,moveFinished]);
+                sendVariables(socket, gameData, clientId);
             }
         });
         socket.on('iterate',function(data){
@@ -115,10 +104,10 @@ function newSocket(namespace){
             if(legit){
                 gameData.board = boardTools.doMoves(gameData.board, [data], gameData.rules, player);
                 gameData.turn= gameData.turn%2+1;
-                gameData.gameString+=data+',';
+                gameData.gameString+='E,';
                 fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
                 socket.broadcast.emit('gameupdate',gameData.gameString);
-                socket.broadcast.emit('setVars',["moveStarted","moveFinished"],[false,false]);
+                socket.broadcast.emit('setVars',["moveStarted","moveFinished","currentPlayer"],[false,false,gameData.turn]);
             }
         });
         socket.on('newgame',function(density,rule,size,timelimit,timebonus){
@@ -127,10 +116,10 @@ function newSocket(namespace){
                 var gameData = JSON.parse(json);
                 if(gameData.p1[0]!=clientId && gameData.p2 == undefined){
                     gameData.p2 = [clientId,"Player 2"];//get name later or smthn
-                    socket.emit('setVars',["THIS_PLAYER"],[2]);
                 }
-                socket.emit("gameupdate",gameData.gameString);
                 fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));//async file write breaks things
+                socket.emit("gameupdate",gameData.gameString);
+                sendVariables(socket, gameData, clientId);
             }else{
                 var board = boardTools.newBoard(density,size);
                 var rules = boardTools.parseRule(rule);
@@ -161,6 +150,27 @@ function newSocket(namespace){
         });
     });
     clients.push(nsp);
+}
+
+function sendVariables(socket, gameData, clientId){
+    var moveStarted = true;
+    var moveFinished = false;
+    var player = 0;
+    var lasttype = gameData.gameString.slice(-2)[0];
+    if (lasttype == 'E' || 
+      gameData.gameString.split(",")[6]=='' || 
+      gameData.gameString.split(",")[6]==undefined){
+        moveStarted = false;
+    }else if(lasttype == 'A' || lasttype == 'C'){
+        moveFinished = true;
+    }
+    if (clientId == gameData.p1[0]){
+        player = 1;
+    }else if(clientId == gameData.p2[0]){
+        player = 2;
+    }
+    console.log(player);
+    socket.emit('setVars',["moveStarted","moveFinished","THIS_PLAYER"],[moveStarted,moveFinished,player]);
 }
 
 function deleteFromArray(array, element) {
