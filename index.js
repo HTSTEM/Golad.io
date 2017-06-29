@@ -42,8 +42,11 @@ app.all('*', function(req, res){
 
 io.on('connection', function(socket) {
     var path = socket.request.headers.referer.split("/").slice(-1)[0];
-    if (path != '' && games.includes(path)){
+    if (path != '' && games.includes(path) && !namespaces.includes(path)){
+        console.log("Creating socket.");
         newSocket(path);
+        namespaces.push(path);
+        console.log(namespaces);
     }
     socket.on('mprequest',function(){
         var dir = uuidv4().replace(/-/g,'');//delete dashes
@@ -138,7 +141,6 @@ function newSocket(namespace){
         nsp.on('disconnect', function() {
             console.log(clientId, "Disconnected")
             deleteFromArray(clients, nsp.id);
-            deleteFromArray(namespaces,path);
         });
     });
     clients.push(nsp);
