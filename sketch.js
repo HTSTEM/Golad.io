@@ -142,6 +142,19 @@ function drawAll() {
             redrawTile(x, y);
         }
     }
+    console.log(moveFinished);
+    if (moveFinished){
+        $("#end").removeClass("locked");
+    }else{
+        $("#end").addClass("locked");
+    }
+    if (currentPlayer == 1) {
+        $("#player1").addClass("blink");
+        $("#player2").removeClass("blink");
+    } else {
+        $("#player1").removeClass("blink");
+        $("#player2").addClass("blink");
+    }
 }
 
 function checkNextStates() {
@@ -576,17 +589,7 @@ function mouseChangeMove (event) {
                         checkNextStates();
                         checkNextStates();
                         drawAll();
-                        if (moveFinished)
-                            $("#end").removeClass("locked");
-                        else
-                            $("#end").addClass("locked");
-                        if (currentPlayer == 1) {
-                            $("#player1").addClass("blink");
-                            $("#player2").removeClass("blink");
-                        } else {
-                            $("#player1").removeClass("blink");
-                            $("#player2").addClass("blink");
-                        }
+                        
                         /*changedTiles = [];
                         for (var x_ = 0; x_ < GRID_WIDTH; x_++) {
                             for (var y_ = 0; y_ < GRID_HEIGHT; y_++) {
@@ -866,5 +869,13 @@ if (online){
                 break;
         }
         drawText();
+    });
+    socket.on('setVars', function(vars, vals){
+        console.log(vals);
+        for (var i = 0; i<vars.length; i++){
+            window[vars[i]]=vals[i];
+            console.log(this[vars[i]]);
+        }
+        drawAll();
     });
 }

@@ -61,15 +61,15 @@ io.on('connection', function(socket) {
 
 function newSocket(namespace){
     var nsp = io.of('/'+namespace);
-    nsp.on("connect",function(nsp){
-        var clientId = cookie.parse(nsp.handshake.headers.cookie).id;///used for continuing game
+    nsp.on("connect",function(socket){
+        var clientId = cookie.parse(socket.handshake.headers.cookie).id;///used for continuing game
         var player = 0;
-        var id = nsp.id;
+        var id = socket.id;
         var path = namespace;
         if (path != ""){
-            nsp.emit('beginMP');
+            socket.emit('beginMP');
         }
-        nsp.on('undo',function(data){
+        socket.on('undo',function(data){
             var gameData = JSON.parse(fs.readFileSync('./games/'+path+'.json', 'utf8'));
             var oldString = gameData.gameString
             console.log(clientId+' undo '+data);
@@ -77,11 +77,16 @@ function newSocket(namespace){
             if (oldString != gameData.gameString){
                 console.log(gameData.gameString);
                 gameData.board = boardTools.remakeBoard(gameData.gameString);
-                nsp.broadcast.emit('gameupdate',gameData.gameString);
                 fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
+                socket.broadcast.emit('gameupdate',gameData.gameString);
+                var moveStarted = true;
+                if (gameData.gameString.slice(-2)[0] == 'E'){
+                    moveStarted = false;
+                }
+                socket.broadcast.emit('setVars',["moveStarted","moveFinished"],[moveStarted,false]);
             }
         });
-        nsp.on('move',function(data){
+        socket.on('move',function(data){
             var gameData = JSON.parse(fs.readFileSync('./games/'+path+'.json', 'utf8'));
             console.log(clientId+' move '+data);
             var legit = boardTools.checkLegit(gameData.gameString,gameData.board,player,data)
@@ -89,11 +94,20 @@ function newSocket(namespace){
             if(legit){
                 gameData.board = boardTools.doMoves(gameData.board, [data], gameData.rules, player);
                 gameData.gameString += data+',';
-                nsp.broadcast.emit('gameupdate',gameData.gameString);
                 fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
+                socket.broadcast.emit('gameupdate',gameData.gameString);
+                var moveStarted = true;
+                var moveFinished = false;
+                var lasttype = gameData.gameString.slice(-2)[0];
+                if (lasttype == 'E'){
+                    moveStarted = false;
+                }else if(lasttype == 'A' || lasttype == 'C'){
+                    moveFinished = true;
+                }
+                socket.broadcast.emit('setVars',["moveStarted","moveFinished"],[moveStarted,moveFinished]);
             }
         });
-        nsp.on('iterate',function(data){
+        socket.on('iterate',function(data){
             var gameData = JSON.parse(fs.readFileSync('./games/'+path+'.json', 'utf8'));
             console.log(clientId+' iterate '+data);
             var legit = boardTools.checkLegit(gameData.gameString,gameData.board,player,data)
@@ -102,18 +116,20 @@ function newSocket(namespace){
                 gameData.board = boardTools.doMoves(gameData.board, [data], gameData.rules, player);
                 gameData.turn= gameData.turn%2+1;
                 gameData.gameString+=data+',';
-                nsp.broadcast.emit('gameupdate',gameData.gameString);
                 fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
+                socket.broadcast.emit('gameupdate',gameData.gameString);
+                socket.broadcast.emit('setVars',["moveStarted","moveFinished"],[false,false]);
             }
         });
-        nsp.on('newgame',function(density,rule,size,timelimit,timebonus){
+        socket.on('newgame',function(density,rule,size,timelimit,timebonus){
             if (games.includes(path)){
                 var json = fs.readFileSync('./games/'+path+'.json', 'utf8');
                 var gameData = JSON.parse(json);
-                if(gameData.p1[0]!=clientId){
+                if(gameData.p1[0]!=clientId && gameData.p2 == undefined){
                     gameData.p2 = [clientId,"Player 2"];//get name later or smthn
+                    socket.emit('setVars',["THIS_PLAYER"],[2]);
                 }
-                nsp.emit("gameupdate",gameData.gameString);
+                socket.emit("gameupdate",gameData.gameString);
                 fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));//async file write breaks things
             }else{
                 var board = boardTools.newBoard(density,size);
@@ -126,7 +142,8 @@ function newSocket(namespace){
                     "rules":rules,
                     "turn":1
                 };
-                nsp.emit('gameupdate',gameData.gameString);
+                socket.emit('gameupdate',gameData.gameString);
+                socket.emit('setVars',["THIS_PLAYER"],[1]);
                 console.log(gameData.gameString);
                 fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
                 games.push(path);
@@ -138,9 +155,9 @@ function newSocket(namespace){
                 player = 2;
         }
         });
-        nsp.on('disconnect', function() {
+        socket.on('disconnect', function() {
             console.log(clientId, "Disconnected")
-            deleteFromArray(clients, nsp.id);
+            deleteFromArray(clients, socket.id);
         });
     });
     clients.push(nsp);
