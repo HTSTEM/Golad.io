@@ -68,12 +68,12 @@
             <div id="hud">
                 <div id="tophalf">
                     <div id="ruleset">B0/S0</div>
-                    <div id="player1" class="">
+                    <div id="player1" class="red">
                         <div id="p1name">Player 1</div><br><br>
                         <div id="player1-type">Human</div>
                         <div id="player1-count">&#x25FC&#xd7 0</div>
                     </div>
-                    <div id="player2" class="">
+                    <div id="player2" class="blue">
                         <div id="p2name">Player 2</div><br><br>
                         <div id="player2-type">Human</div>
                         <div id="player2-count">&#x25FC&#xd7 0</div>
@@ -87,10 +87,13 @@
                                 Tap a living cell to kill it,<br>
                                 or tap a dead cell to birth it.
                             </td>
+                            <td colspan="3" id="iterate" class="red" style="display:none">
+                                Iterate
+                            </td>
                         </tr>
                         <tr>
                             <td colspan="2" id="turn">1A / 1A</td>
-                            <td id="end" class="locked button">End...</td>
+                            <td id="end" class="button">End...</td>
                         </tr>
                         <tr>
                             <td class="button locked">Undo</td>

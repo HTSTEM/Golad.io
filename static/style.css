@@ -36,9 +36,6 @@ html, body {
     float: right;
     width: 100%;
 
-    background-color: #d60000;
-    color: #000;
-
     border-radius: 2px;
     margin: 1px;
     position: relative;
@@ -46,9 +43,6 @@ html, body {
 #player2 {
     float: right;
     width: 100%;
-
-    background-color: #0055d6;
-    color: #fff;
 
     border-radius: 2px;
     margin: 1px;
@@ -205,16 +199,6 @@ html, body {
     color: #FFF;
     text-align: center;
 }
-/*#playbtn {
-    width: 70%;
-    margin-left: 15%;
-    margin-top: 10vh;
-    border-radius: 5vh;
-    height: 10vh;
-    background-color: #f5f5f5;
-    color: #000;
-    line-height: 10vh;
-}*/
 #lhs {
     float: left;
     width: 48.5vw;
@@ -258,6 +242,20 @@ html, body {
     -ms-animation: blink 1.5s infinite alternate;
     -o-animation: blink 1.5s infinite alternate;
     animation: blink 1.5s infinite alternate;
+}
+
+#iterate {
+    text-align: center;
+    vertical-align: middle;
+    border-radius: 2px;
+}
+.red {
+    background-color: #d60000;
+    color: #000;
+}
+.blue {
+    background-color: #0055d6;
+    color: #fff;
 }
 
 @media (orientation: portrait) {

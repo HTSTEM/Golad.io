@@ -143,9 +143,20 @@ function drawAll() {
         }
     }
     if (moveFinished && (currentPlayer == THIS_PLAYER || !online)){
-        $("#end").removeClass("locked");
+        //$("#end").removeClass("locked");
+        $("#instructions").hide();
+        if (currentPlayer == 1) {
+            $("#iterate").removeClass("blue");
+            $("#iterate").addClass("red");
+        } else {
+            $("#iterate").removeClass("red");
+            $("#iterate").addClass("blue");
+        }
+        $("#iterate").show();
     }else{
-        $("#end").addClass("locked");
+        //$("#end").addClass("locked");
+        $("#iterate").hide();
+        $("#instructions").show();
     }
     if (currentPlayer == 1) {
         $("#player1").addClass("blink");
@@ -202,7 +213,10 @@ function gameOfLifeTick(send=true) {
     stolenTiles = [];
     creationTile = [];
     origCol = 0;
-    $("#end").addClass("locked");
+    //$("#end").addClass("locked");
+    $("#iterate").hide();
+    $("#instructions").show();
+
     $("#turn").text(moveNumber.curr.join('') + " / " + moveNumber.max.join(''));
 
     if (currentPlayer == 1)
@@ -665,7 +679,7 @@ $(window).keydown(function () {
     }
 });
 
-$("#end").bind('touchstart click', function (event) {
+$("#iterate").bind('touchstart click', function (event) {
     if (tileSizePerc == 100 && moveFinished) {
         gameOfLifeTick();
     }
