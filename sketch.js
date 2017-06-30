@@ -718,6 +718,22 @@ $("#resign_btn").bind('toutchstart click', function (event) {
     $("#playing").fadeOut(function () {$("#winner").fadeIn();});
     ending = false;
 });
+$("#req_draw_btn").bind('toutchstart click', function (event) {
+    $("#end_screen").hide();
+    if (online) {
+        socket.emit("endgame", "offer_draw");
+        $("#please_wait").show();
+    } else {
+        $("#win-message").text("It's a draw");
+        $("#win-dialog").removeClass("blue");
+        $("#win-dialog").removeClass("red");
+
+        $("#playing").fadeOut(function () {
+            $("#winner").fadeIn();
+        });
+        ending = false;
+    }
+});
 $("#win-button").bind('tourchstart click', function (event) {
     $("#winner").fadeOut(function () {$("#titlescreen").fadeIn();window.location=".."});
 });
@@ -752,6 +768,25 @@ $("#onlnbtn").bind('touchstart click', function (event) {
         window.alert("You are not online.");
     }
 });
+
+$("#accept_drw_btn").bind('touchstart click', function (event) {
+    if (online) {
+        socket.emit("endgame", "accept_draw");
+        $("#win-message").text("It's a draw");
+        $("#win-dialog").removeClass("red");
+        $("#win-dialog").removeClass("blue");
+
+        $("#playing").fadeOut(function () {
+            $("#winner").fadeIn();
+        });
+        ending = false;
+    }
+});
+$("#decline_drw_btn").bind('touchstart click', function (event) {
+    socket.emit("endgame", "decline_draw");
+    $("#accept_draw").hide();
+});
+
 $("#getbtn").bind('touchstart click', function (event) {
     if (gameString == ''){
         window.alert("There is no game.");
@@ -943,6 +978,22 @@ if (online){
             }
             $("#playing").fadeOut(function () {$("#winner").fadeIn()});
             ending = false;
+        } else if (reason == 'draw') {
+            $("#win-message").text("It's a draw");
+            $("#win-dialog").removeClass("red");
+            $("#win-dialog").removeClass("blue");
+
+            $("#playing").fadeOut(function () {
+                $("#winner").fadeIn();
+            });
+            ending = false;
+        } else if (reason == 'offer_draw') {
+            $("#accept_draw").show();
+            $("#end_screen").hide();
+        } else if (reason == 'decline_draw') {
+            $("#accept_draw").hide();
+            $("#end_screen").hide();
+            $("#please_wait").hide();
         }
     });
 }
