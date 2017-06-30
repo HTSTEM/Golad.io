@@ -62,6 +62,8 @@ var tileSizePercGrow = 5;
 var tileSizePercSpeed = 10;
 var changedTiles = [];
 
+var ending = false; // Is user at the `end game` screen?
+
 var gameString = ''//20x20, no time limits, no time bonus, both humans
 
 function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
@@ -486,127 +488,128 @@ function containsObject(obj, list) {
 }
 
 function mouseChangeMove (event) {
-    if (THIS_PLAYER != currentPlayer && online){
-        return;
-    }
-    for (var y = 0; y < GRID_HEIGHT; y++) {
-        for (var x = 0; x < GRID_WIDTH; x++) {
-            if (!(containsObject({x:x, y:y}, changedThisDrag))) {
-                var rect = [xOff + x * (tileSize + TILE_PADDING), yOff + y * (tileSize + TILE_PADDING), tileSize, tileSize];
-                if (event.offsetX > rect[0] && event.offsetX < rect[0] + rect[2]) {
-                    if (event.offsetY > rect[1] && event.offsetY < rect[1] + rect[3]) {
-                        var otherPlayer;
-                        var i;
-                        var action = null;
-                        if (currentPlayer == 1){
-                            otherPlayer = 2;
-                        }else{
-                            otherPlayer = 1;
-                        }
-                        if ((gridTiles[x][y].currentState != 0 && gridTiles[x][y].currentState <= 3) && 
-                            !moveStarted) {//kill any cell
-                            origCol = gridTiles[x][y].currentState;
-                            gridTiles[x][y].currentState = 0;
-                            moveStarted = true;
-                            moveFinished = true;
-                            moveNumber.curr[1] = "B";
-                            creationTile = "[" + x + "," + y + "]";
-                            action={type:'move',move:B20[x]+B20[y]+'A'};//send message
-                        }//undo full move
-                        else if (gridTiles[x][y].currentState == 0 && creationTile == "[" + x + "," + y + "]" && moveFinished) {
-                            gridTiles[x][y].currentState = origCol;
-                            origCol = 0;
-                            for (i = 0; i < stolenTiles.length; i ++) {//undo sacrafices
-                                gridTiles[stolenTiles[i][0]][stolenTiles[i][1]].currentState = currentPlayer;
+    if (!ending) {
+        if (THIS_PLAYER != currentPlayer && online) {
+            return;
+        }
+        for (var y = 0; y < GRID_HEIGHT; y++) {
+            for (var x = 0; x < GRID_WIDTH; x++) {
+                if (!(containsObject({x: x, y: y}, changedThisDrag))) {
+                    var rect = [xOff + x * (tileSize + TILE_PADDING), yOff + y * (tileSize + TILE_PADDING), tileSize, tileSize];
+                    if (event.offsetX > rect[0] && event.offsetX < rect[0] + rect[2]) {
+                        if (event.offsetY > rect[1] && event.offsetY < rect[1] + rect[3]) {
+                            var otherPlayer;
+                            var i;
+                            var action = null;
+                            if (currentPlayer == 1) {
+                                otherPlayer = 2;
+                            } else {
+                                otherPlayer = 1;
                             }
-                            stolenTiles = [];
-                            moveStarted = false;
-                            moveFinished = false;
-                            moveNumber.curr[1] = "A";
-                            creationTile = null;
-                            action={type:'undo',move:'all'};//undo moves up to last E (handled by server)
-                        }
-                        else if (gridTiles[x][y].currentState == 0 && stolenTiles.includes("[" + x + "," + y + "]")) {//unsacrifice
-                            gridTiles[x][y].currentState = currentPlayer;
-
-                            stolenTiles.splice(stolenTiles.indexOf("[" + x + "," + y + "]"), 1);
-                            if (moveNumber.curr[1] == "D")
-                                moveNumber.curr[1] = "C";
-                            else if (moveNumber.curr[1] == "C")
-                                moveNumber.curr[1] = "B";
-                            moveStarted = true;
-                            moveFinished = false;
-                            action={type:'undo',move:B20[x]+B20[y]};//send message
-                        }
-                        else if (gridTiles[x][y].currentState == currentPlayer + 3) {//unbirth cell
-                            origCol = gridTiles[x][y].currentState;
-                            gridTiles[x][y].currentState = 0;
-                            for (i = 0; i < stolenTiles.length; i ++) {
-                                gridTiles[eval(stolenTiles[i])[0]][eval(stolenTiles[i])[1]].currentState = currentPlayer;
-                            }
-                            stolenTiles = [];
-                            moveStarted = false;
-                            moveFinished = false;
-                            moveNumber.curr[1] = "A";
-                            creationTile = null;
-                            action={type:'undo',move:'all'};
-                        }
-                        else if (gridTiles[x][y].currentState == 0 && !moveStarted) {//birth tile
-                            gridTiles[x][y].currentState = currentPlayer + 3;
-                            moveStarted = true;
-                            moveFinished = false;
-                            moveNumber.curr[1]= "B";
-                            creationTile = "[" + x + "," + y + "]";
-                            action={type:'move',move:B20[x]+B20[y]+"D"};
-                        }
-                        else if (gridTiles[x][y].currentState == currentPlayer && moveStarted && !moveFinished) {//sacrifice
-                            origCol = gridTiles[x][y].currentState;
-                            gridTiles[x][y].currentState = 0;
-                            stolenTiles.push("[" + x + "," + y + "]");
-                            moveNumber.curr[1] = "C";
-                            if (stolenTiles.length >= 2) {
-                                moveNumber.curr[1] = "D";
+                            if ((gridTiles[x][y].currentState != 0 && gridTiles[x][y].currentState <= 3) && !moveStarted) {//kill any cell
+                                origCol = gridTiles[x][y].currentState;
+                                gridTiles[x][y].currentState = 0;
+                                moveStarted = true;
                                 moveFinished = true;
-                                action={type:'move',move:B20[x]+B20[y]+"C"};
-                            }else{
-                                action={type:'move',move:B20[x]+B20[y]+"B"};
+                                moveNumber.curr[1] = "B";
+                                creationTile = "[" + x + "," + y + "]";
+                                action = {type: 'move', move: B20[x] + B20[y] + 'A'};//send message
+                            }//undo full move
+                            else if (gridTiles[x][y].currentState == 0 && creationTile == "[" + x + "," + y + "]" && moveFinished) {
+                                gridTiles[x][y].currentState = origCol;
+                                origCol = 0;
+                                for (i = 0; i < stolenTiles.length; i++) {//undo sacrafices
+                                    gridTiles[stolenTiles[i][0]][stolenTiles[i][1]].currentState = currentPlayer;
+                                }
+                                stolenTiles = [];
+                                moveStarted = false;
+                                moveFinished = false;
+                                moveNumber.curr[1] = "A";
+                                creationTile = null;
+                                action = {type: 'undo', move: 'all'};//undo moves up to last E (handled by server)
                             }
-                        }
-                        if (action!=null){
-                            if (online){
-                                socket.emit(action.type,action.move);
-                            }
-                            if(action.type=='move'){
-                                console.log(action.move);
-                                gameString += action.move+",";
-                            }else if(action.type=='undo'){
-                                gameString = tryUndo(gameString,action.move,currentPlayer);
-                            }
-                        }
-                        moveNumber.max = moveNumber.curr;
-                        var turn = $("#turn");
-                        turn.text(moveNumber.curr.join('') + " / " + moveNumber.max.join(''));
+                            else if (gridTiles[x][y].currentState == 0 && stolenTiles.includes("[" + x + "," + y + "]")) {//unsacrifice
+                                gridTiles[x][y].currentState = currentPlayer;
 
-                        checkNextStates();
-                        checkNextStates();
-                        drawAll();
-                        console.log(gameString);
-                        
-                        /*changedTiles = [];
-                        for (var x_ = 0; x_ < GRID_WIDTH; x_++) {
-                            for (var y_ = 0; y_ < GRID_HEIGHT; y_++) {
-                                if (gridTiles[x_][y_].currentState != gridTiles[x_][y_].nextState) {
-                                    changedTiles.push({x:x_, y:y_});
+                                stolenTiles.splice(stolenTiles.indexOf("[" + x + "," + y + "]"), 1);
+                                if (moveNumber.curr[1] == "D")
+                                    moveNumber.curr[1] = "C";
+                                else if (moveNumber.curr[1] == "C")
+                                    moveNumber.curr[1] = "B";
+                                moveStarted = true;
+                                moveFinished = false;
+                                action = {type: 'undo', move: B20[x] + B20[y]};//send message
+                            }
+                            else if (gridTiles[x][y].currentState == currentPlayer + 3) {//unbirth cell
+                                origCol = gridTiles[x][y].currentState;
+                                gridTiles[x][y].currentState = 0;
+                                for (i = 0; i < stolenTiles.length; i++) {
+                                    gridTiles[eval(stolenTiles[i])[0]][eval(stolenTiles[i])[1]].currentState = currentPlayer;
+                                }
+                                stolenTiles = [];
+                                moveStarted = false;
+                                moveFinished = false;
+                                moveNumber.curr[1] = "A";
+                                creationTile = null;
+                                action = {type: 'undo', move: 'all'};
+                            }
+                            else if (gridTiles[x][y].currentState == 0 && !moveStarted) {//birth tile
+                                gridTiles[x][y].currentState = currentPlayer + 3;
+                                moveStarted = true;
+                                moveFinished = false;
+                                moveNumber.curr[1] = "B";
+                                creationTile = "[" + x + "," + y + "]";
+                                action = {type: 'move', move: B20[x] + B20[y] + "D"};
+                            }
+                            else if (gridTiles[x][y].currentState == currentPlayer && moveStarted && !moveFinished) {//sacrifice
+                                origCol = gridTiles[x][y].currentState;
+                                gridTiles[x][y].currentState = 0;
+                                stolenTiles.push("[" + x + "," + y + "]");
+                                moveNumber.curr[1] = "C";
+                                if (stolenTiles.length >= 2) {
+                                    moveNumber.curr[1] = "D";
+                                    moveFinished = true;
+                                    action = {type: 'move', move: B20[x] + B20[y] + "C"};
+                                } else {
+                                    action = {type: 'move', move: B20[x] + B20[y] + "B"};
                                 }
                             }
-                        }
-                        refreshTile(x, y);
-                        checkNextStates();
+                            if (action != null) {
+                                if (online) {
+                                    socket.emit(action.type, action.move);
+                                }
+                                if (action.type == 'move') {
+                                    console.log(action.move);
+                                    gameString += action.move + ",";
+                                } else if (action.type == 'undo') {
+                                    gameString = tryUndo(gameString, action.move, currentPlayer);
+                                }
+                            }
+                            moveNumber.max = moveNumber.curr;
+                            var turn = $("#turn");
+                            turn.text(moveNumber.curr.join('') + " / " + moveNumber.max.join(''));
 
-                        for (i = 0; i < changedTiles.length; i++) {
-                            redrawTile(changedTiles[i].x, changedTiles[i].y);
-                        }*/
-                        return;
+                            checkNextStates();
+                            checkNextStates();
+                            drawAll();
+                            console.log(gameString);
+
+                            /*changedTiles = [];
+                             for (var x_ = 0; x_ < GRID_WIDTH; x_++) {
+                             for (var y_ = 0; y_ < GRID_HEIGHT; y_++) {
+                             if (gridTiles[x_][y_].currentState != gridTiles[x_][y_].nextState) {
+                             changedTiles.push({x:x_, y:y_});
+                             }
+                             }
+                             }
+                             refreshTile(x, y);
+                             checkNextStates();
+
+                             for (i = 0; i < changedTiles.length; i++) {
+                             redrawTile(changedTiles[i].x, changedTiles[i].y);
+                             }*/
+                            return;
+                        }
                     }
                 }
             }
@@ -673,21 +676,72 @@ $("#mainGame").bind('touchstart click', function (event) {
     mouseChangeMove(event);
 });
 
-$(window).keydown(function () {
-    if (tileSizePerc == 100 && moveFinished) {
-        gameOfLifeTick();
+$("#iterate").bind('touchstart click', function (event) {
+    if (!ending) {
+        if (tileSizePerc == 100 && moveFinished) {
+            gameOfLifeTick();
+        }
     }
 });
 
-$("#iterate").bind('touchstart click', function (event) {
-    if (tileSizePerc == 100 && moveFinished) {
-        gameOfLifeTick();
+$("#end").bind('toutchstart click', function (event) {
+    if (currentPlayer == 1) {
+        $("#end_screen").removeClass("blue");
+        $("#end_screen").addClass("red");
+    } else {
+        $("#end_screen").removeClass("red");
+        $("#end_screen").addClass("blue");
+    }
+    $("#end_screen").show();
+    ending = true;
+});
+$("#cancel_end").bind('toutchstart click', function (event) {
+    $("#end_screen").hide();
+    ending = false;
+});
+$("#resign_btn").bind('toutchstart click', function (event) {
+    $("#end_screen").hide();
+    if (online) {
+        socket.emit("endgame", "resign");
+    } else {
+        if (currentPlayer == 1) {
+            $("#win-message").text("Blue won!");
+            $("#win-dialog").removeClass("red");
+            $("#win-dialog").addClass("blue");
+        } else {
+            $("#win-message").text("Red won!");
+            $("#win-dialog").removeClass("blue");
+            $("#win-dialog").addClass("red");
+        }
+        $("#playing").fadeOut(function () {$("#winner").fadeIn();});
+        ending = false;
     }
 });
+$("#win-button").bind('tourchstart click', function (event) {
+    $("#winner").fadeOut(function () {$("#titlescreen").fadeIn();});
+});
+
 $("#playbtn").bind('touchstart click', function (event) {
     online = false;
     $("#playing").show();
     $("#winner").hide();
+
+    currentPlayer = 1;
+    moveStarted = false;
+    moveFinished = false;
+    creationTile = [];
+    stolenTiles = [];
+    origCol = 0;
+    moveNumber = {curr: [1,"A"], max: [1,"A"]};
+    gameEnd = false;
+
+    turnNumber = 1;
+
+    tileSizePerc = 100;
+    tileSizePercGrow = 5;
+    tileSizePercSpeed = 10;
+    changedTiles = [];
+
     $("#titlescreen").fadeOut(function () {setupGame();});
 });
 $("#onlnbtn").bind('touchstart click', function (event) {
