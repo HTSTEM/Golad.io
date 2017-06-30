@@ -166,8 +166,8 @@ function checkNextStates() {
             var n = getNeighbours(x, y);
 
             if (BIRTH_COUNT.includes(n) && gridTiles[x][y].currentState == 0) {
-                var rn = getColouredNeighbours(x, y, 1);
-                var bn = getColouredNeighbours(x, y, 2);
+                var rn = getColouredNeighbours(gridTiles, x, y, 1);
+                var bn = getColouredNeighbours(gridTiles, x, y, 2);
                 if (rn>bn){
                     gridTiles[x][y].nextState = 1;
                 }else if(bn>rn){
@@ -240,9 +240,8 @@ function gameOfLifeTick(send=true) {
         if(send){
             socket.emit('iterate','E')//send iterate message
         }
-    }else{
-        gameString+='E,';
     }
+    gameString+='E,';
 }
 
 function getNeighbours(x, y) {
@@ -263,23 +262,7 @@ function getNeighbours(x, y) {
     return neighbours;
 }
 
-function getColouredNeighbours(x, y, colour) {
-    var colouredNeighbours = 0;
 
-    for (var dx = -1; dx < 2; dx++) {
-        for (var dy = -1; dy < 2; dy++) {
-            if (x + dx >= 0 && x + dx < GRID_WIDTH && y + dy >= 0 && y + dy < GRID_HEIGHT) {
-                if (!(dx == 0 && dy == 0)) {
-                    if (gridTiles[x + dx][y + dy].currentState == colour || gridTiles[x + dx][y + dy].currentState == colour+3) {
-                        colouredNeighbours += 1;
-                    }
-                }
-            }
-        }
-    }
-
-    return colouredNeighbours;
-}
 
 function getCellsCount() {
     var redCells = 0;
@@ -577,8 +560,10 @@ function mouseChangeMove (event) {
                         }
                         if (action!=null){
                             if (online){
-                                socket.emit(action.type,action.move)
-                            }else if(action.type=='move'){
+                                socket.emit(action.type,action.move);
+                            }
+                            if(action.type=='move'){
+                                console.log(action.move);
                                 gameString += action.move+",";
                             }else if(action.type=='undo'){
                                 gameString = tryUndo(gameString,action.move,currentPlayer);
@@ -591,6 +576,7 @@ function mouseChangeMove (event) {
                         checkNextStates();
                         checkNextStates();
                         drawAll();
+                        console.log(gameString);
                         
                         /*changedTiles = [];
                         for (var x_ = 0; x_ < GRID_WIDTH; x_++) {
@@ -837,7 +823,6 @@ if (online){
         if (!data.includes(gameString)||gameString===''){//new game
             var moves=data.split(",").slice(6);
             var movesMade = countItems(moves,'E');
-            currentPlayer = movesMade%2+1;
             gridTiles = remakeBoard(data);
             checkNextStates();
             drawAll();
