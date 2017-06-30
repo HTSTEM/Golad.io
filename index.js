@@ -111,6 +111,22 @@ function newSocket(namespace){
                 socket.broadcast.emit('setVars',["moveStarted","moveFinished","currentPlayer"],[false,false,gameData.turn]);
             }
         });
+
+        socket.on('endgame',function(data){
+            // TODO: DO THIS BIT HANSS! THIS IS ALL A PLACEHOLDER BECAUSE I DON'T KNOW HOW THE BACKEND WORKS!!!!
+            // It *seems* to work, but I think that the server still thinks the game exists
+
+            if (data == "resign") {
+                var gameData = JSON.parse(fs.readFileSync('./games/' + path + '.json', 'utf8'));
+                console.log("Player " + gameData.turn + " resigned!");
+                if (gameData.turn == 1) {
+                    socket.broadcast.emit("gameEnd", "resign", 2);
+                } else {
+                    socket.broadcast.emit("gameEnd", "resign", 1);
+                }
+            }
+        });
+
         socket.on('newgame',function(density,rule,size,timelimit,timebonus){
             if (games.includes(path)){
                 var json = fs.readFileSync('./games/'+path+'.json', 'utf8');

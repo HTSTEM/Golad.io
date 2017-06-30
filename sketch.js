@@ -685,6 +685,7 @@ $("#iterate").bind('touchstart click', function (event) {
 });
 
 $("#end").bind('toutchstart click', function (event) {
+    if (online && THIS_PLAYER != currentPlayer) {return}
     if (currentPlayer == 1) {
         $("#end_screen").removeClass("blue");
         $("#end_screen").addClass("red");
@@ -700,25 +701,25 @@ $("#cancel_end").bind('toutchstart click', function (event) {
     ending = false;
 });
 $("#resign_btn").bind('toutchstart click', function (event) {
-    $("#end_screen").hide();
     if (online) {
         socket.emit("endgame", "resign");
-    } else {
-        if (currentPlayer == 1) {
-            $("#win-message").text("Blue won!");
-            $("#win-dialog").removeClass("red");
-            $("#win-dialog").addClass("blue");
-        } else {
-            $("#win-message").text("Red won!");
-            $("#win-dialog").removeClass("blue");
-            $("#win-dialog").addClass("red");
-        }
-        $("#playing").fadeOut(function () {$("#winner").fadeIn();});
-        ending = false;
     }
+    $("#end_screen").hide();
+
+    if (currentPlayer == 1) {
+        $("#win-message").text("Blue won!");
+        $("#win-dialog").removeClass("red");
+        $("#win-dialog").addClass("blue");
+    } else {
+        $("#win-message").text("Red won!");
+        $("#win-dialog").removeClass("blue");
+        $("#win-dialog").addClass("red");
+    }
+    $("#playing").fadeOut(function () {$("#winner").fadeIn();});
+    ending = false;
 });
 $("#win-button").bind('tourchstart click', function (event) {
-    $("#winner").fadeOut(function () {$("#titlescreen").fadeIn();});
+    $("#winner").fadeOut(function () {$("#titlescreen").fadeIn();window.location=".."});
 });
 
 $("#playbtn").bind('touchstart click', function (event) {
@@ -733,7 +734,7 @@ $("#playbtn").bind('touchstart click', function (event) {
     stolenTiles = [];
     origCol = 0;
     moveNumber = {curr: [1,"A"], max: [1,"A"]};
-    gameEnd = false;
+    gameEnd = true;
 
     turnNumber = 1;
 
@@ -909,14 +910,6 @@ if (online){
     socket.on('beginMP', function (){
         setupGame();
     });
-    socket.on('gameEnd', function (data){
-        gameEnd = true;
-        gameString += data;
-        var type = data.charCodeAt(0)-70;//70=F
-        var message = getEndgameMessage(type);
-        window.alert(message);
-        
-    });
     socket.on('setName', function (player, name){
         switch(player){
             case 1:
@@ -934,5 +927,22 @@ if (online){
             console.log(vars[i],window[vars[i]]);
         }
         drawAll();
+    });
+    socket.on('gameEnd', function(reason, winner) {
+        if (reason == 'resign') {
+            $("#end_screen").hide();
+
+            if (winner == 1) {
+                $("#win-message").text("Red won!");
+                $("#win-dialog").removeClass("blue");
+                $("#win-dialog").addClass("red");
+            } else {
+                $("#win-message").text("Blue won!");
+                $("#win-dialog").removeClass("red");
+                $("#win-dialog").addClass("blue");
+            }
+            $("#playing").fadeOut(function () {$("#winner").fadeIn()});
+            ending = false;
+        }
     });
 }
