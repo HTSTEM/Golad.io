@@ -112,21 +112,21 @@ function newSocket(namespace){
             }
         });
 
-        socket.on('endgame',function(data){
+        socket.on('endgame',function(data, sent_as){
             // TODO: DO THIS BIT HANSS!!!! THIS IS ALL A PLACEHOLDER BECAUSE I DON'T KNOW HOW THE BACKEND WORKS!!!!
             // TODO: It *seems* to work, but I think that the server still thinks the game exists
 
-            var gameData = JSON.parse(fs.readFileSync('./games/' + path + '.json', 'utf8'));
+            //var gameData = JSON.parse(fs.readFileSync('./games/' + path + '.json', 'utf8'));
 
             if (data == "resign") {
-                console.log("Player " + gameData.turn + " resigned!");
-                if (gameData.turn == 1) {
+                console.log("Player " + sent_as + " resigned!");
+                if (sent_as == 1) {
                     socket.broadcast.emit("gameEnd", "resign", 2);
                 } else {
                     socket.broadcast.emit("gameEnd", "resign", 1);
                 }
             } else if (data == 'offer_draw') {
-                socket.broadcast.emit("gameEnd", "offer_draw", gameData.turn);
+                socket.broadcast.emit("gameEnd", "offer_draw", sent_as);
             } else if (data == 'accept_draw') {
                 socket.broadcast.emit("gameEnd", "draw", 0);
             } else if (data == 'decline_draw') {

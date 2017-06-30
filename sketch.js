@@ -685,8 +685,9 @@ $("#iterate").bind('touchstart click', function (event) {
 });
 
 $("#end").bind('toutchstart click', function (event) {
-    if (online && THIS_PLAYER != currentPlayer) {return}
-    if (currentPlayer == 1) {
+    if (online) {var clr = THIS_PLAYER;}
+    else {var clr = currentPlayer;}
+    if (clr == 1) {
         $("#end_screen").removeClass("blue");
         $("#end_screen").addClass("red");
     } else {
@@ -702,7 +703,7 @@ $("#cancel_end").bind('toutchstart click', function (event) {
 });
 $("#resign_btn").bind('toutchstart click', function (event) {
     if (online) {
-        socket.emit("endgame", "resign");
+        socket.emit("endgame", "resign", THIS_PLAYER);
     }
     $("#end_screen").hide();
 
@@ -721,7 +722,7 @@ $("#resign_btn").bind('toutchstart click', function (event) {
 $("#req_draw_btn").bind('toutchstart click', function (event) {
     $("#end_screen").hide();
     if (online) {
-        socket.emit("endgame", "offer_draw");
+        socket.emit("endgame", "offer_draw", THIS_PLAYER);
         $("#please_wait").show();
     } else {
         $("#win-message").text("It's a draw");
@@ -771,7 +772,7 @@ $("#onlnbtn").bind('touchstart click', function (event) {
 
 $("#accept_drw_btn").bind('touchstart click', function (event) {
     if (online) {
-        socket.emit("endgame", "accept_draw");
+        socket.emit("endgame", "accept_draw", THIS_PLAYER);
         $("#win-message").text("It's a draw");
         $("#win-dialog").removeClass("red");
         $("#win-dialog").removeClass("blue");
@@ -783,7 +784,7 @@ $("#accept_drw_btn").bind('touchstart click', function (event) {
     }
 });
 $("#decline_drw_btn").bind('touchstart click', function (event) {
-    socket.emit("endgame", "decline_draw");
+    socket.emit("endgame", "decline_draw", THIS_PLAYER);
     $("#accept_draw").hide();
 });
 
