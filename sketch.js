@@ -142,7 +142,7 @@ function drawAll() {
             redrawTile(x, y);
         }
     }
-    if (moveFinished && currentPlayer == THIS_PLAYER){
+    if (moveFinished && (currentPlayer == THIS_PLAYER || !online)){
         $("#end").removeClass("locked");
     }else{
         $("#end").addClass("locked");
@@ -489,7 +489,7 @@ function containsObject(obj, list) {
 }
 
 function mouseChangeMove (event) {
-    if (THIS_PLAYER != currentPlayer){
+    if (THIS_PLAYER != currentPlayer && online){
         return;
     }
     for (var y = 0; y < GRID_HEIGHT; y++) {

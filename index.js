@@ -78,7 +78,7 @@ function newSocket(namespace){
                 console.log(gameData.gameString);
                 gameData.board = boardTools.remakeBoard(gameData.gameString);
                 fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
-                socket.broadcast.emit('gameupdate',gameData.gameString);
+                nsp.emit('gameupdate',gameData.gameString);
                 var moveStarted = true;
                 sendVariables(socket, gameData, clientId);
             }
@@ -92,7 +92,7 @@ function newSocket(namespace){
                 gameData.board = boardTools.doMoves(gameData.board, [data], gameData.rules, player);
                 gameData.gameString += data+',';
                 fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
-                socket.broadcast.emit('gameupdate',gameData.gameString);
+                nsp.emit('gameupdate',gameData.gameString);
                 sendVariables(socket, gameData, clientId);
             }
         });
@@ -106,8 +106,8 @@ function newSocket(namespace){
                 gameData.turn= gameData.turn%2+1;
                 gameData.gameString+='E,';
                 fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
-                socket.broadcast.emit('gameupdate',gameData.gameString);
-                socket.broadcast.emit('setVars',["moveStarted","moveFinished","currentPlayer"],[false,false,gameData.turn]);
+                nsp.emit('gameupdate',gameData.gameString);
+                nsp.emit('setVars',["moveStarted","moveFinished","currentPlayer"],[false,false,gameData.turn]);
             }
         });
         socket.on('newgame',function(density,rule,size,timelimit,timebonus){
