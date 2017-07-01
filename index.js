@@ -145,6 +145,7 @@ function newSocket(namespace){
                 console.log(gameData.gameString);
                 socket.emit("gameupdate",gameData.gameString);
                 sendVariables(socket, gameData, clientId);
+                socket.emit('setVars',["currentPlayer"],[gameData.turn]);
             }else{
                 var board = boardTools.newBoard(density,size);
                 var rules = boardTools.parseRule(rule);
