@@ -112,26 +112,40 @@ function newSocket(namespace){
             }
         });
 
-        socket.on('endgame',function(data, sent_as){
-            // TODO: DO THIS BIT HANSS!!!! THIS IS ALL A PLACEHOLDER BECAUSE I DON'T KNOW HOW THE BACKEND WORKS!!!!
-            // TODO: It *seems* to work, but I think that the server still thinks the game exists
-
-            //var gameData = JSON.parse(fs.readFileSync('./games/' + path + '.json', 'utf8'));
-
+        socket.on('endgame',function(data){
+            // NOTE: You trusted the client to much. One player could resign for the other
+            // NOTE: The game is meant to stay existent even after the endgame so people can go back and see it. 
+            // NOTE: I'll probably add a gameFinished variable to the json
+            console.log(data)
+            var gameData = JSON.parse(fs.readFileSync('./games/' + path + '.json', 'utf8'));
+            var sent_as = 0;
+            if (clientId == gameData.p1[0]){
+                sent_as = 1;
+            }else if(clientId == gameData.p2[0]){
+                sent_as = 2;
+            }else{
+                return;
+            }
             if (data == "resign") {
                 console.log("Player " + sent_as + " resigned!");
                 if (sent_as == 1) {
-                    socket.broadcast.emit("gameEnd", "resign", 2);
+                    nsp.emit("gameEnd", "K", 2);
                 } else {
-                    socket.broadcast.emit("gameEnd", "resign", 1);
+                    nsp.emit("gameEnd", "H", 1);
                 }
             } else if (data == 'offer_draw') {
-                socket.broadcast.emit("gameEnd", "offer_draw", sent_as);
+                nsp.emit("gameEnd", "offer_draw", sent_as);
             } else if (data == 'accept_draw') {
-                socket.broadcast.emit("gameEnd", "draw", 0);
+                if (gameData.drawOffer == 1){
+                    nsp.emit("gameEnd", "M", 0);
+                }else if (gameData.drawOffer == 2){
+                    nsp.emit("gameEnd", "N", 0);
+                }
             } else if (data == 'decline_draw') {
-                socket.broadcast.emit("gameEnd", "decline_draw", 0);
+                nsp.emit("gameEnd", "decline_draw", 0);
+                gameData.drawOffer = 0;
             }
+            fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
         });
 
         socket.on('newgame',function(density,rule,size,timelimit,timebonus){
@@ -155,7 +169,8 @@ function newSocket(namespace){
                     "gameString":gameString,
                     "board":board,
                     "rules":rules,
-                    "turn":1
+                    "turn":1,
+                    "drawOffer":0
                 };
                 socket.emit('gameupdate',gameData.gameString);
                 socket.emit('setVars',["THIS_PLAYER"],[1]);

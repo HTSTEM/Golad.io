@@ -247,7 +247,6 @@ function gameOfLifeTick(send=true) {
             }
         }
     }
-
     checkNextStates();
 
     tileSizePerc = 0;
@@ -626,6 +625,7 @@ function growTiles() {
         }
 
         var st = performance.now();
+        console.log("tiles", changedTiles.length);
         for (var i = 0; i < changedTiles.length; i++) {
             refreshTile(changedTiles[i].x, changedTiles[i].y);
             redrawTile(changedTiles[i].x, changedTiles[i].y);
@@ -703,26 +703,28 @@ $("#cancel_end").bind('toutchstart click', function (event) {
 });
 $("#resign_btn").bind('toutchstart click', function (event) {
     if (online) {
-        socket.emit("endgame", "resign", THIS_PLAYER);
+        socket.emit("endgame", "resign");//don't trust the client. ever.
     }
-    $("#end_screen").hide();
+    else{
+        $("#end_screen").hide();
 
-    if (currentPlayer == 1) {
-        $("#win-message").text("Blue won!");
-        $("#win-dialog").removeClass("red");
-        $("#win-dialog").addClass("blue");
-    } else {
-        $("#win-message").text("Red won!");
-        $("#win-dialog").removeClass("blue");
-        $("#win-dialog").addClass("red");
+        if (currentPlayer == 1) {
+            $("#win-message").text("Blue won!");
+            $("#win-dialog").removeClass("red");
+            $("#win-dialog").addClass("blue");
+        } else {
+            $("#win-message").text("Red won!");
+            $("#win-dialog").removeClass("blue");
+            $("#win-dialog").addClass("red");
+        }
+        $("#playing").fadeOut(function () {$("#winner").fadeIn();});
+        ending = false;
     }
-    $("#playing").fadeOut(function () {$("#winner").fadeIn();});
-    ending = false;
 });
 $("#req_draw_btn").bind('toutchstart click', function (event) {
     $("#end_screen").hide();
     if (online) {
-        socket.emit("endgame", "offer_draw", THIS_PLAYER);
+        socket.emit("endgame", "offer_draw");
         $("#please_wait").show();
     } else {
         $("#win-message").text("It's a draw");
@@ -868,8 +870,8 @@ function playOut(moves){
         var type = move.slice(-1)[0];
         console.log(move)
         if (type=='E'){
-            moveStarted = true;
-            moveFinished = true;
+            moveStarted = false;
+            moveFinished = false;
             gameOfLifeTick(false);//animations!
         }else{
             var x = B20.indexOf(move[0]);
@@ -907,7 +909,7 @@ function getEndgameMessage(endtype){
         p1pos = 'your';
     }else if(THIS_PLAYER==2){
         p2s = 'You';
-        p1 = 'you';
+        p2 = 'you';
         p2pos = 'your';
     }
     switch(endtype){
@@ -964,37 +966,35 @@ if (online){
         }
         drawAll();
     });
+        
+    
     socket.on('gameEnd', function(reason, winner) {
-        if (reason == 'resign') {
-            $("#end_screen").hide();
-
-            if (winner == 1) {
-                $("#win-message").text("Red won!");
-                $("#win-dialog").removeClass("blue");
-                $("#win-dialog").addClass("red");
-            } else {
-                $("#win-message").text("Blue won!");
-                $("#win-dialog").removeClass("red");
-                $("#win-dialog").addClass("blue");
-            }
-            $("#playing").fadeOut(function () {$("#winner").fadeIn()});
-            ending = false;
-        } else if (reason == 'draw') {
-            $("#win-message").text("It's a draw");
+        console.log("winner",winner);
+        if (winner == 1) {
+            $("#win-dialog").removeClass("blue");
+            $("#win-dialog").addClass("red");
+        } else if (winner == 2){
+            $("#win-dialog").removeClass("red");
+            $("#win-dialog").addClass("blue");
+        } else {
             $("#win-dialog").removeClass("red");
             $("#win-dialog").removeClass("blue");
-
-            $("#playing").fadeOut(function () {
-                $("#winner").fadeIn();
-            });
-            ending = false;
-        } else if (reason == 'offer_draw') {
+        }
+        if (reason == 'offer_draw') {
             $("#accept_draw").show();
             $("#end_screen").hide();
         } else if (reason == 'decline_draw') {
             $("#accept_draw").hide();
             $("#end_screen").hide();
             $("#please_wait").hide();
+        } else {
+            var ending = reason.charCodeAt(0)-70;
+            console.log(ending);
+            console.log(getEndgameMessage(ending));
+            $("#win-message").text(getEndgameMessage(ending));
+            $("#end_screen").show();
+            $("#playing").fadeOut(function () {$("#winner").fadeIn()});
+            ending = false;
         }
     });
 }
