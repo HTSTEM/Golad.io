@@ -170,7 +170,7 @@ function drawAll() {
 }
 
 function checkNextStates() {
-    var counts = getCellsCount();
+    var counts = getCellsCount(gridTiles);
     $("#player1-count").html("&#x25FC&#xd7 " + counts.red);
     $("#player2-count").html("&#x25FC&#xd7 " + counts.blue);
 
@@ -279,25 +279,7 @@ function getNeighbours(x, y) {
 
 
 
-function getCellsCount() {
-    var redCells = 0;
-    var blueCells = 0;
-    var whiteCells = 0;
 
-    for (var y = 0; y < GRID_HEIGHT; y++) {
-        for (var x = 0; x < GRID_WIDTH; x++) {
-            if (gridTiles[x][y].currentState == 1)
-                redCells ++;
-            else if (gridTiles[x][y].currentState == 2)
-                blueCells ++;
-            else if(gridTiles[x][y].currentState == 3){
-                whiteCells ++;
-            }
-        }
-    }
-
-    return {red: redCells, blue: blueCells, white: whiteCells};
-}
 
 function refreshTile(x, y) {
     checkNextStates();
@@ -634,8 +616,8 @@ function growTiles() {
 
         if (tileSizePerc < 100) {
             setTimeout(growTiles, tileSizePercSpeed - dt)
-        } else {
-            var cc = getCellsCount();
+        } else if(!online){
+            var cc = getCellsCount(gridTiles);
             if (cc.red == 0 && cc.blue == 0) {
                 gameString+='L';
                 alert("It's a draw!");
@@ -900,17 +882,21 @@ function getEndgameMessage(endtype){
     var p1 = P1NAME;
     var p1s = P1NAME;
     var p1pos = P1NAME + "'s";
+    var p1toBe = 'was';
     var p2 = P2NAME;
     var p2s = P2NAME;
     var p2pos = P2NAME + "'s";
+    var p2toBe = 'was';
     if (THIS_PLAYER==1){//grammatical correctness is hard
         p1s = 'You';
         p1 = 'you';
         p1pos = 'your';
+        p1toBe = 'were'
     }else if(THIS_PLAYER==2){
         p2s = 'You';
         p2 = 'you';
         p2pos = 'your';
+        p2toBe = 'were';
     }
     switch(endtype){
         case 0: return p2s+' was wiped out and '+p1+' won!';
@@ -927,12 +913,13 @@ function getEndgameMessage(endtype){
 
 if (online){
     socket.on('gameupdate', function (data){//update gamestring
-        if (!data.includes(gameString)||gameString===''){//new game
+        if (!data.includes(gameString) || gameString=='' || data==gameString){//new game
             var moves=data.split(",").slice(6);
             var movesMade = countItems(moves,'E');
             gridTiles = remakeBoard(data);
             checkNextStates();
             drawAll();
+            console.log('yay')
         }else if(data.includes(gameString)){//play out moves
             var newMoves = data.replace(gameString,'');
             console.log("gamestring", gameString);

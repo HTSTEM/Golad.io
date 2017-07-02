@@ -105,10 +105,24 @@ function newSocket(namespace){
                 gameData.board = boardTools.doMoves(gameData.board, [data], gameData.rules, player);
                 gameData.turn= gameData.turn%2+1;
                 gameData.gameString+='E,';
-                fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
                 console.log(gameData.gameString);
                 socket.broadcast.emit('gameupdate',gameData.gameString);
                 socket.broadcast.emit('setVars',["moveStarted","moveFinished","currentPlayer"],[false,false,gameData.turn]);
+                var cc = boardTools.getCellsCount(gameData.board);
+                if (cc.red == 0 && cc.blue == 0) {
+                    gameData.gameString+='L';
+                    console.log("It's a draw!");
+                    nsp.emit("gameEnd",'L',0);
+                } else if (cc.red == 0) {
+                    gameData.gameString+='I';
+                    console.log("Blue won!");
+                    nsp.emit("gameEnd",'I',2);
+                } else if (cc.blue == 0) {
+                    gameData.gameString+='F';
+                    console.log("Red won!");
+                    nsp.emit("gameEnd",'F',1);
+                }
+                fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
             }
         });
 

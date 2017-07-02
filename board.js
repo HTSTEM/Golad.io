@@ -427,6 +427,26 @@ function tryUndo(gamestring, undo, player){
     return parts.join()+",";
 }
 
+function getCellsCount(grid) {
+    var redCells = 0;
+    var blueCells = 0;
+    var whiteCells = 0;
+
+    for (var y = 0; y < grid.length; y++) {
+        for (var x = 0; x < grid[0].length; x++) {
+            if (grid[x][y].currentState == 1)
+                redCells ++;
+            else if (grid[x][y].currentState == 2)
+                blueCells ++;
+            else if(grid[x][y].currentState == 3){
+                whiteCells ++;
+            }
+        }
+    }
+
+    return {red: redCells, blue: blueCells, white: whiteCells};
+}
+
 try{
     module.exports.parseRule = parseRule;
     module.exports.newBoard = newBoard;
@@ -437,4 +457,5 @@ try{
     module.exports.doMoves = doMoves;
     module.exports.tryUndo = tryUndo;
     module.exports.remakeBoard = remakeBoard;
+    module.exports.getCellsCount = getCellsCount;
 }catch(err){}
