@@ -173,7 +173,7 @@ function newSocket(namespace){
                 console.log(gameData.gameString);
                 socket.emit("gameupdate",gameData.gameString);
                 sendVariables(socket, gameData, clientId);
-                socket.emit('setVars',["currentPlayer"],[gameData.turn]);
+                socket.emit('setVars',["currentPlayer","P1NAME","P2NAME"],[gameData.turn,gameData.p1[1],gameData.p2[1]]);
             }else{
                 var board = boardTools.newBoard(density,size);
                 var rules = boardTools.parseRule(rule);
@@ -197,7 +197,18 @@ function newSocket(namespace){
                 player = 1;
             }else if(clientId == gameData.p2[0]){
                 player = 2;
-        }
+            }
+        });
+        socket.on('requestName', function(name){
+            var gameData = JSON.parse(fs.readFileSync('./games/'+path+'.json', 'utf8'));
+            if (clientId == gameData.p1[0]){
+                gameData.p1[1] = name
+                nsp.emit("setName", 1, name);
+            }else if (clientId == gameData.p2[0]){
+                gameData.p2[1] = name
+                nsp.emit("setName", 2, name);
+            }
+            fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
         });
         socket.on('disconnect', function() {
             console.log(clientId, "Disconnected")

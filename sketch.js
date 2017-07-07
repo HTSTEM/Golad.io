@@ -616,21 +616,17 @@ function growTiles() {
             setTimeout(growTiles, tileSizePercSpeed - dt)
         } else if(!online){
             var cc = getCellsCount(gridTiles);
+            var endGame= '';
             if (cc.red == 0 && cc.blue == 0) {
-                gameString+='L';
-                alert("It's a draw!");
-                $("#playing").fadeOut();
-                $("#titlescreen").show();
+                endGame = 'L'
             } else if (cc.red == 0) {
-                gameString+='I';
-                alert("Blue won!");
-                $("#playing").fadeOut();
-                $("#titlescreen").show();
+                endGame ='I';
             } else if (cc.blue == 0) {
-                gameString+='F';
-                alert("Red won!");
-                $("#playing").fadeOut();
-                $("#titlescreen").show();
+                endGame='F';
+            }
+            if (endGame !== ''){
+                gameString += endGame
+                displayEndgame(endGame.charCodeAt(0)-70)
             }
         }
     }
@@ -718,7 +714,12 @@ $("#req_draw_btn").bind('toutchstart click', function (event) {
     }
 });
 $("#win-button").bind('tourchstart click', function (event) {
-    $("#winner").fadeOut(function () {$("#titlescreen").fadeIn();window.location=".."});
+    $("#winner").fadeOut(function () {
+        $("#titlescreen").fadeIn();
+        if(online){
+            window.location="..";
+        }
+    });
 });
 
 $("#playbtn").bind('touchstart click', function (event) {
@@ -876,6 +877,10 @@ function playOut(moves){
     }
 }
 
+function sendName(name){
+    socket.emit("requestName",name);
+}
+
 function getEndgameMessage(endtype){
     var p1 = P1NAME;
     var p1s = P1NAME;
@@ -897,16 +902,25 @@ function getEndgameMessage(endtype){
         p2toBe = 'were';
     }
     switch(endtype){
-        case 0: return p2s+' was wiped out and '+p1+' won!';
+        case 0: return p2s+' '+p2toBe+' wiped out and '+p1+' won!';
         case 1: return p2s+' ran out of time and '+p1+' won!';
         case 2: return p2s+' resigned and '+p1+' won!';
-        case 3: return p1s+' was wiped out and '+p2+' won!';
+        case 3: return p1s+' '+p1toBe+' wiped out and '+p2+' won!';
         case 4: return p1s+' ran out of time and '+p2+' won!';
         case 5: return p1s+' resigned and '+p2+' won!';
         case 6: return 'Both populations were wiped out simultaneously.';
         case 7: return p2s+' accepted '+p1pos+' offer for a draw.';
         case 8: return p1s+' accepted '+p2pos+' offer for a draw.';
     }
+}
+
+function displayEndgame(state){
+    console.log(state);
+    console.log(getEndgameMessage(state));
+    $("#win-message").text(getEndgameMessage(state));
+    $("#end_screen").show();
+    $("#playing").fadeOut(function () {$("#winner").fadeIn()});
+    ending = false;//should this be true?
 }
 
 if (online){
@@ -973,13 +987,9 @@ if (online){
             $("#end_screen").hide();
             $("#please_wait").hide();
         } else {
-            var ending = reason.charCodeAt(0)-70;
-            console.log(ending);
-            console.log(getEndgameMessage(ending));
-            $("#win-message").text(getEndgameMessage(ending));
-            $("#end_screen").show();
-            $("#playing").fadeOut(function () {$("#winner").fadeIn()});
-            ending = false;
+            $("#accept_draw").hide();
+            var endGame = reason.charCodeAt(0)-70;
+            displayEndgame(endGame);
         }
     });
 }
