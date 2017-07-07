@@ -780,6 +780,19 @@ $("#getbtn").bind('touchstart click', function (event) {
         window.prompt("Here's the gamestring!",gameString);
     }
 });
+
+$("#menu").bind('touchstart click', function (event) {
+    $("#playing").fadeOut(function () {$("#titlescreen").fadeIn()});
+});
+
+$("#rsmbtn").bind('touchstart click', function (event) {
+    if (gameString === ''){
+        alert("There is no game")
+    }else{
+        $("#titlescreen").fadeOut(function () {$("#playing").fadeIn()});
+    }
+});
+
 function setupGame () {
     $("#playing").show();
     $("#winner").hide();
