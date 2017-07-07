@@ -14,9 +14,9 @@
         <div id="titlescreen" style="display:none">
             <div id="lhs">
                 <div id="logo">
-                    <div id="logot1">Game of life...</div>
+                    <div id="logot1"><p>Game of Life</p><p class="s">-John Conway</p></div>
                     <div id="logo-inner"></div>
-                    <div id="logot2">...and death</div>
+                    <div id="logot2"><p>and Death</p><p class="s">-Cary Huang</p></div>
                 </div>
             </div>
             <div id="rhs">
@@ -34,7 +34,7 @@
                 </div>
                 <div class="row">
                     <div class="minirow">
-                        <div class="menubtn-hlf" id="getbtn"><div class="btninner"><div class="btntxt half">
+                        <div class="menubtn-hlf" id="getbtn"><div class="btninner" style="width: calc(100% - 2%);"><div class="btntxt half">
                             Get current game string
                         </div></div></div>
                         <div class="menubtn-hlf" id="loadbtn"><div class="btninner"><div class="btntxt half">
@@ -52,9 +52,8 @@
             <div id="wdw">
                 <div id="win-dialog">
                     <div id="wdc">
-                        <div id="win-message">Red wins?</div>
-                        <div id="win-sub">Tough luck sukkah!</div>
-                        <div id="win-button">I resign</div>
+                        <div id="win-message"></div>
+                        <div id="win-button">Home</div>
                     </div>
                 </div>
             </div>
@@ -68,12 +67,12 @@
             <div id="hud">
                 <div id="tophalf">
                     <div id="ruleset">B0/S0</div>
-                    <div id="player1" class="">
+                    <div id="player1" class="red">
                         <div id="p1name">Player 1</div><br><br>
                         <div id="player1-type">Human</div>
                         <div id="player1-count">&#x25FC&#xd7 0</div>
                     </div>
-                    <div id="player2" class="">
+                    <div id="player2" class="blue">
                         <div id="p2name">Player 2</div><br><br>
                         <div id="player2-type">Human</div>
                         <div id="player2-count">&#x25FC&#xd7 0</div>
@@ -87,10 +86,13 @@
                                 Tap a living cell to kill it,<br>
                                 or tap a dead cell to birth it.
                             </td>
+                            <td colspan="3" id="iterate" class="red" style="display:none">
+                                Iterate
+                            </td>
                         </tr>
                         <tr>
                             <td colspan="2" id="turn">1A / 1A</td>
-                            <td id="end" class="locked button">End...</td>
+                            <td id="end" class="button">End...</td>
                         </tr>
                         <tr>
                             <td class="button locked">Undo</td>
@@ -99,6 +101,37 @@
                         </tr>
                     </table>
                 </div>
+            </div>
+
+            <div id="end_screen" class="red" style="display:none">
+                <table style="height: 100%; width: 100%;">
+                    <tr>
+                        <td colspan="3" style="text-align: center;">Are you sure you want to end?</td>
+                    </tr>
+                    <tr>
+                        <td class="button" id="resign_btn">Resign</td>
+                        <td class="button" id="req_draw_btn">Offer Draw</td>
+                        <td class="button" id="cancel_end">Cancel</td>
+                    </tr>
+                </table>
+            </div>
+            <div id="please_wait" class="red" style="display:none">
+                <table style="height: 100%; width: 100%;">
+                    <tr>
+                        <td colspan="3" style="text-align: center;">Please wait.</td>
+                    </tr>
+                </table>
+            </div>
+            <div id="accept_draw" class="red" style="display:none">
+                <table style="height: 100%; width: 100%;">
+                    <tr>
+                        <td colspan="2" style="text-align: center;">Draw requested!</td>
+                    </tr>
+                    <tr>
+                        <td class="button" id="accept_drw_btn">Accept</td>
+                        <td class="button" id="decline_drw_btn">Decline</td>
+                    </tr>
+                </table>
             </div>
         </div>
 

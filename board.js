@@ -124,6 +124,22 @@ function boardToString(board){
     return string
 }
 
+function getColouredNeighbours(grid, x, y, colour) {
+    var colouredNeighbours = 0;
+    for (var dx = -1; dx < 2; dx++) {
+        for (var dy = -1; dy < 2; dy++) {
+            if (x + dx >= 0 && x + dx < grid.length && y + dy >= 0 && y + dy < grid[0].length) {
+                if (!(dx == 0 && dy == 0)) {
+                    if (grid[x + dx][y + dy].currentState == colour || grid[x + dx][y + dy].currentState == colour+3) {
+                        colouredNeighbours += 1;
+                    }
+                }
+            }
+        }
+    }
+    return colouredNeighbours;
+}
+
 function iterate(grid,birth,survive){
     if (typeof survive == "undefined"){
         survive = birth[1];
@@ -131,52 +147,35 @@ function iterate(grid,birth,survive){
     }
     for (var x = 0; x < grid.length; x++) {
         for (var y = 0; y < grid[0].length; y++) {
-            var reds = 0;
-            var blues = 0;
-            var total = 0;
-            for(var i=-1; i<=1; i++){
-                for(var j=-1; j<=1; j++){
-                    try{
-                        if (i==0&&j==0){
-                            continue;
-                        }
-                        switch(grid[x+i][y+j].currentState){//continue loop if dead
-                            case 0: break;
-                            case 1: 
-                                reds+=1;
-                                total+=1;
-                                break;//add to appropriate one
-                            case 2: 
-                                blues+=1; 
-                                total+=1;
-                                break;
-                            default:
-                                total+=1
-                        }
-                        //not dead, add to total
-                    }catch(err){}//if out of bounds
+            var rn = getColouredNeighbours(grid, x, y, 1);
+            var bn = getColouredNeighbours(grid, x, y, 2);
+            var n = rn+bn;
+            if (birth.includes(n) && grid[x][y].currentState == 0) {
+                if (rn>bn){
+                    grid[x][y].nextState = 1;
+                }else if(bn>rn){
+                    grid[x][y].nextState = 2;
+                }else if(rn==bn){
+                    grid[x][y].nextState = 3;
                 }
             }
-            if (birth.includes(total) && grid[x][y].currentState == 0) {//birth cell
-                if (reds > blues){
-                    grid[x][y].nextState = 1;//red
-                }else if(blues > reds){
-                    grid[x][y].nextState = 2;//blue
-                }else{
-                    grid[x][y].nextState=3;//neutral
-                }
-            }
-            else if (!survive.includes(total)) {
+            else if (!(survive.includes(n)) && grid[x][y].currentState != 0) {
                 grid[x][y].nextState = 0;
-            }else{
-                grid[x][y].nextState=grid[x][y].currentState;
             }
-            
+            else {
+                if (grid[x][y].currentState <= 3)
+                    grid[x][y].nextState = grid[x][y].currentState;
+                else
+                    grid[x][y].nextState = grid[x][y].currentState - 3;
+            }
         }
     }
     for (var x = 0; x < grid.length; x++) {
         for (var y = 0; y < grid[0].length; y++) {
-            grid[x][y].currentState=grid[x][y].nextState;          
+            //console.log(gridTiles[x][y].currentState,gridTiles[x][y].nextState);
+            if (grid[x][y].currentState != grid[x][y].nextState) {
+                grid[x][y].currentState = grid[x][y].nextState;
+            }
         }
     }
     return grid;
@@ -261,6 +260,7 @@ function checkLegit(gamestring, board, player, move){//player is the player requ
     }    
     if (type === 'A'){
         if (turnMoves.length!=0){
+            console.log(turnMoves);
             console.log('too many moves to kill');
             return false;
         }
@@ -427,6 +427,26 @@ function tryUndo(gamestring, undo, player){
     return parts.join()+",";
 }
 
+function getCellsCount(grid) {
+    var redCells = 0;
+    var blueCells = 0;
+    var whiteCells = 0;
+
+    for (var y = 0; y < grid.length; y++) {
+        for (var x = 0; x < grid[0].length; x++) {
+            if (grid[x][y].currentState == 1)
+                redCells ++;
+            else if (grid[x][y].currentState == 2)
+                blueCells ++;
+            else if(grid[x][y].currentState == 3){
+                whiteCells ++;
+            }
+        }
+    }
+
+    return {red: redCells, blue: blueCells, white: whiteCells};
+}
+
 try{
     module.exports.parseRule = parseRule;
     module.exports.newBoard = newBoard;
@@ -437,4 +457,5 @@ try{
     module.exports.doMoves = doMoves;
     module.exports.tryUndo = tryUndo;
     module.exports.remakeBoard = remakeBoard;
+    module.exports.getCellsCount = getCellsCount;
 }catch(err){}

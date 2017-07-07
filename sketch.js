@@ -32,7 +32,7 @@ var FANCY_MIDDLE = true;
 var BIRTH_COUNT = [3];
 var STAY_COUNT = [2,3];
 var RULE_STRING = "B" + BIRTH_COUNT.join("") + "/" + "S" + STAY_COUNT.join("");
-var THIS_PLAYER = 0;//MP game only 1=red, 2=blue, anything else=spectating7
+var THIS_PLAYER;//MP game only 1=red, 2=blue, anything else=spectating7
 var P1NAME = 'Player 1';
 var P2NAME = 'Player 2';
 
@@ -61,6 +61,8 @@ var tileSizePerc = 100;
 var tileSizePercGrow = 5;
 var tileSizePercSpeed = 10;
 var changedTiles = [];
+
+var ending = false; // Is user at the `end game` screen?
 
 var gameString = ''//20x20, no time limits, no time bonus, both humans
 
@@ -142,10 +144,33 @@ function drawAll() {
             redrawTile(x, y);
         }
     }
+    if (moveFinished && (currentPlayer == THIS_PLAYER || !online)){
+        //$("#end").removeClass("locked");
+        $("#instructions").hide();
+        if (currentPlayer == 1) {
+            $("#iterate").removeClass("blue");
+            $("#iterate").addClass("red");
+        } else {
+            $("#iterate").removeClass("red");
+            $("#iterate").addClass("blue");
+        }
+        $("#iterate").show();
+    }else{
+        //$("#end").addClass("locked");
+        $("#iterate").hide();
+        $("#instructions").show();
+    }
+    if (currentPlayer == 1) {
+        $("#player1").addClass("blink");
+        $("#player2").removeClass("blink");
+    } else {
+        $("#player1").removeClass("blink");
+        $("#player2").addClass("blink");
+    }
 }
 
 function checkNextStates() {
-    var counts = getCellsCount();
+    var counts = getCellsCount(gridTiles);
     $("#player1-count").html("&#x25FC&#xd7 " + counts.red);
     $("#player2-count").html("&#x25FC&#xd7 " + counts.blue);
 
@@ -154,8 +179,8 @@ function checkNextStates() {
             var n = getNeighbours(x, y);
 
             if (BIRTH_COUNT.includes(n) && gridTiles[x][y].currentState == 0) {
-                var rn = getColouredNeighbours(x, y, 1);
-                var bn = getColouredNeighbours(x, y, 2);
+                var rn = getColouredNeighbours(gridTiles, x, y, 1);
+                var bn = getColouredNeighbours(gridTiles, x, y, 2);
                 if (rn>bn){
                     gridTiles[x][y].nextState = 1;
                 }else if(bn>rn){
@@ -177,7 +202,7 @@ function checkNextStates() {
     }
 }
 
-function gameOfLifeTick() {
+function gameOfLifeTick(send) {
 
     turnNumber++;
     console.log(turnNumber);
@@ -190,7 +215,10 @@ function gameOfLifeTick() {
     stolenTiles = [];
     creationTile = [];
     origCol = 0;
-    $("#end").addClass("locked");
+    //$("#end").addClass("locked");
+    $("#iterate").hide();
+    $("#instructions").show();
+
     $("#turn").text(moveNumber.curr.join('') + " / " + moveNumber.max.join(''));
 
     if (currentPlayer == 1)
@@ -219,16 +247,14 @@ function gameOfLifeTick() {
             }
         }
     }
-
     checkNextStates();
 
     tileSizePerc = 0;
     growTiles();
-    if (online){
+    if (online && send!==false){
         socket.emit('iterate','E')//send iterate message
-    }else{
-        gameString+='E,';
     }
+    gameString+='E,';
 }
 
 function getNeighbours(x, y) {
@@ -249,43 +275,9 @@ function getNeighbours(x, y) {
     return neighbours;
 }
 
-function getColouredNeighbours(x, y, colour) {
-    var colouredNeighbours = 0;
 
-    for (var dx = -1; dx < 2; dx++) {
-        for (var dy = -1; dy < 2; dy++) {
-            if (x + dx >= 0 && x + dx < GRID_WIDTH && y + dy >= 0 && y + dy < GRID_HEIGHT) {
-                if (!(dx == 0 && dy == 0)) {
-                    if (gridTiles[x + dx][y + dy].currentState == colour || gridTiles[x + dx][y + dy].currentState == colour+3) {
-                        colouredNeighbours += 1;
-                    }
-                }
-            }
-        }
-    }
 
-    return colouredNeighbours;
-}
 
-function getCellsCount() {
-    var redCells = 0;
-    var blueCells = 0;
-    var whiteCells = 0;
-
-    for (var y = 0; y < GRID_HEIGHT; y++) {
-        for (var x = 0; x < GRID_WIDTH; x++) {
-            if (gridTiles[x][y].currentState == 1)
-                redCells ++;
-            else if (gridTiles[x][y].currentState == 2)
-                blueCells ++;
-            else if(gridTiles[x][y].currentState == 3){
-                whiteCells ++;
-            }
-        }
-    }
-
-    return {red: redCells, blue: blueCells, white: whiteCells};
-}
 
 function refreshTile(x, y) {
     checkNextStates();
@@ -475,131 +467,128 @@ function containsObject(obj, list) {
 }
 
 function mouseChangeMove (event) {
-    for (var y = 0; y < GRID_HEIGHT; y++) {
-        for (var x = 0; x < GRID_WIDTH; x++) {
-            if (!(containsObject({x:x, y:y}, changedThisDrag))) {
-                var rect = [xOff + x * (tileSize + TILE_PADDING), yOff + y * (tileSize + TILE_PADDING), tileSize, tileSize];
-                if (event.offsetX > rect[0] && event.offsetX < rect[0] + rect[2]) {
-                    if (event.offsetY > rect[1] && event.offsetY < rect[1] + rect[3]) {
-                        var otherPlayer;
-                        var i;
-                        var action = null;
-                        if (currentPlayer == 1){
-                            otherPlayer = 2;
-                        }else{
-                            otherPlayer = 1;
-                        }
-                        if ((gridTiles[x][y].currentState != 0 && gridTiles[x][y].currentState <= 3) && 
-                            !moveStarted) {//kill any cell
-                            origCol = gridTiles[x][y].currentState;
-                            gridTiles[x][y].currentState = 0;
-                            moveStarted = true;
-                            moveFinished = true;
-                            moveNumber.curr[1] = "B";
-                            creationTile = "[" + x + "," + y + "]";
-                            action={type:'move',move:B20[x]+B20[y]+'A'};//send message
-                        }//undo full move
-                        else if (gridTiles[x][y].currentState == 0 && creationTile == "[" + x + "," + y + "]" && moveFinished) {
-                            gridTiles[x][y].currentState = origCol;
-                            origCol = 0;
-                            for (i = 0; i < stolenTiles.length; i ++) {//undo sacrafices
-                                gridTiles[stolenTiles[i][0]][stolenTiles[i][1]].currentState = currentPlayer;
+    if (!ending) {
+        if (THIS_PLAYER != currentPlayer && online) {
+            return;
+        }
+        for (var y = 0; y < GRID_HEIGHT; y++) {
+            for (var x = 0; x < GRID_WIDTH; x++) {
+                if (!(containsObject({x: x, y: y}, changedThisDrag))) {
+                    var rect = [xOff + x * (tileSize + TILE_PADDING), yOff + y * (tileSize + TILE_PADDING), tileSize, tileSize];
+                    if (event.offsetX > rect[0] && event.offsetX < rect[0] + rect[2]) {
+                        if (event.offsetY > rect[1] && event.offsetY < rect[1] + rect[3]) {
+                            var otherPlayer;
+                            var i;
+                            var action = null;
+                            if (currentPlayer == 1) {
+                                otherPlayer = 2;
+                            } else {
+                                otherPlayer = 1;
                             }
-                            stolenTiles = [];
-                            moveStarted = false;
-                            moveFinished = false;
-                            moveNumber.curr[1] = "A";
-                            creationTile = null;
-                            action={type:'undo',move:'all'};//undo moves up to last E (handled by server)
-                        }
-                        else if (gridTiles[x][y].currentState == 0 && stolenTiles.includes("[" + x + "," + y + "]")) {//unsacrifice
-                            gridTiles[x][y].currentState = currentPlayer;
-
-                            stolenTiles.splice(stolenTiles.indexOf("[" + x + "," + y + "]"), 1);
-                            if (moveNumber.curr[1] == "D")
-                                moveNumber.curr[1] = "C";
-                            else if (moveNumber.curr[1] == "C")
-                                moveNumber.curr[1] = "B";
-                            moveStarted = true;
-                            moveFinished = false;
-                            action={type:'undo',move:B20[x]+B20[y]};//send message
-                        }
-                        else if (gridTiles[x][y].currentState == currentPlayer + 3) {//unbirth cell
-                            origCol = gridTiles[x][y].currentState;
-                            gridTiles[x][y].currentState = 0;
-                            for (i = 0; i < stolenTiles.length; i ++) {
-                                gridTiles[eval(stolenTiles[i])[0]][eval(stolenTiles[i])[1]].currentState = currentPlayer;
-                            }
-                            stolenTiles = [];
-                            moveStarted = false;
-                            moveFinished = false;
-                            moveNumber.curr[1] = "A";
-                            creationTile = null;
-                            action={type:'undo',move:'all'};
-                        }
-                        else if (gridTiles[x][y].currentState == 0 && !moveStarted) {//birth tile
-                            gridTiles[x][y].currentState = currentPlayer + 3;
-                            moveStarted = true;
-                            moveFinished = false;
-                            moveNumber.curr[1]= "B";
-                            creationTile = "[" + x + "," + y + "]";
-                            action={type:'move',move:B20[x]+B20[y]+"D"};
-                        }
-                        else if (gridTiles[x][y].currentState == currentPlayer && moveStarted && !moveFinished) {//sacrifice
-                            origCol = gridTiles[x][y].currentState;
-                            gridTiles[x][y].currentState = 0;
-                            stolenTiles.push("[" + x + "," + y + "]");
-                            moveNumber.curr[1] = "C";
-                            if (stolenTiles.length >= 2) {
-                                moveNumber.curr[1] = "D";
+                            if ((gridTiles[x][y].currentState != 0 && gridTiles[x][y].currentState <= 3) && !moveStarted) {//kill any cell
+                                origCol = gridTiles[x][y].currentState;
+                                gridTiles[x][y].currentState = 0;
+                                moveStarted = true;
                                 moveFinished = true;
-                                action={type:'move',move:B20[x]+B20[y]+"C"};
-                            }else{
-                                action={type:'move',move:B20[x]+B20[y]+"B"};
+                                moveNumber.curr[1] = "B";
+                                creationTile = "[" + x + "," + y + "]";
+                                action = {type: 'move', move: B20[x] + B20[y] + 'A'};//send message
+                            }//undo full move
+                            else if (gridTiles[x][y].currentState == 0 && creationTile == "[" + x + "," + y + "]" && moveFinished) {
+                                gridTiles[x][y].currentState = origCol;
+                                origCol = 0;
+                                for (i = 0; i < stolenTiles.length; i++) {//undo sacrafices
+                                    gridTiles[stolenTiles[i][0]][stolenTiles[i][1]].currentState = currentPlayer;
+                                }
+                                stolenTiles = [];
+                                moveStarted = false;
+                                moveFinished = false;
+                                moveNumber.curr[1] = "A";
+                                creationTile = null;
+                                action = {type: 'undo', move: 'all'};//undo moves up to last E (handled by server)
                             }
-                        }
-                        if (action!=null){
-                            if (online){
-                                socket.emit(action.type,action.move)
-                            }else if(action.type=='move'){
-                                gameString += action.move+",";
-                            }else if(action.type=='undo'){
-                                gameString = tryUndo(gameString,action.move,currentPlayer);
-                            }
-                        }
-                        moveNumber.max = moveNumber.curr;
-                        var turn = $("#turn");
-                        turn.text(moveNumber.curr.join('') + " / " + moveNumber.max.join(''));
+                            else if (gridTiles[x][y].currentState == 0 && stolenTiles.includes("[" + x + "," + y + "]")) {//unsacrifice
+                                gridTiles[x][y].currentState = currentPlayer;
 
-                        checkNextStates();
-                        checkNextStates();
-                        drawAll();
-                        if (moveFinished)
-                            $("#end").removeClass("locked");
-                        else
-                            $("#end").addClass("locked");
-                        if (currentPlayer == 1) {
-                            $("#player1").addClass("blink");
-                            $("#player2").removeClass("blink");
-                        } else {
-                            $("#player1").removeClass("blink");
-                            $("#player2").addClass("blink");
-                        }
-                        /*changedTiles = [];
-                        for (var x_ = 0; x_ < GRID_WIDTH; x_++) {
-                            for (var y_ = 0; y_ < GRID_HEIGHT; y_++) {
-                                if (gridTiles[x_][y_].currentState != gridTiles[x_][y_].nextState) {
-                                    changedTiles.push({x:x_, y:y_});
+                                stolenTiles.splice(stolenTiles.indexOf("[" + x + "," + y + "]"), 1);
+                                if (moveNumber.curr[1] == "D")
+                                    moveNumber.curr[1] = "C";
+                                else if (moveNumber.curr[1] == "C")
+                                    moveNumber.curr[1] = "B";
+                                moveStarted = true;
+                                moveFinished = false;
+                                action = {type: 'undo', move: B20[x] + B20[y]};//send message
+                            }
+                            else if (gridTiles[x][y].currentState == currentPlayer + 3) {//unbirth cell
+                                origCol = gridTiles[x][y].currentState;
+                                gridTiles[x][y].currentState = 0;
+                                for (i = 0; i < stolenTiles.length; i++) {
+                                    gridTiles[eval(stolenTiles[i])[0]][eval(stolenTiles[i])[1]].currentState = currentPlayer;
+                                }
+                                stolenTiles = [];
+                                moveStarted = false;
+                                moveFinished = false;
+                                moveNumber.curr[1] = "A";
+                                creationTile = null;
+                                action = {type: 'undo', move: 'all'};
+                            }
+                            else if (gridTiles[x][y].currentState == 0 && !moveStarted) {//birth tile
+                                gridTiles[x][y].currentState = currentPlayer + 3;
+                                moveStarted = true;
+                                moveFinished = false;
+                                moveNumber.curr[1] = "B";
+                                creationTile = "[" + x + "," + y + "]";
+                                action = {type: 'move', move: B20[x] + B20[y] + "D"};
+                            }
+                            else if (gridTiles[x][y].currentState == currentPlayer && moveStarted && !moveFinished) {//sacrifice
+                                origCol = gridTiles[x][y].currentState;
+                                gridTiles[x][y].currentState = 0;
+                                stolenTiles.push("[" + x + "," + y + "]");
+                                moveNumber.curr[1] = "C";
+                                if (stolenTiles.length >= 2) {
+                                    moveNumber.curr[1] = "D";
+                                    moveFinished = true;
+                                    action = {type: 'move', move: B20[x] + B20[y] + "C"};
+                                } else {
+                                    action = {type: 'move', move: B20[x] + B20[y] + "B"};
                                 }
                             }
-                        }
-                        refreshTile(x, y);
-                        checkNextStates();
+                            if (action != null) {
+                                if (online) {
+                                    socket.emit(action.type, action.move);
+                                }
+                                if (action.type == 'move') {
+                                    console.log(action.move);
+                                    gameString += action.move + ",";
+                                } else if (action.type == 'undo') {
+                                    gameString = tryUndo(gameString, action.move, currentPlayer);
+                                }
+                            }
+                            moveNumber.max = moveNumber.curr;
+                            var turn = $("#turn");
+                            turn.text(moveNumber.curr.join('') + " / " + moveNumber.max.join(''));
 
-                        for (i = 0; i < changedTiles.length; i++) {
-                            redrawTile(changedTiles[i].x, changedTiles[i].y);
-                        }*/
-                        return;
+                            checkNextStates();
+                            checkNextStates();
+                            drawAll();
+                            console.log(gameString);
+
+                            /*changedTiles = [];
+                             for (var x_ = 0; x_ < GRID_WIDTH; x_++) {
+                             for (var y_ = 0; y_ < GRID_HEIGHT; y_++) {
+                             if (gridTiles[x_][y_].currentState != gridTiles[x_][y_].nextState) {
+                             changedTiles.push({x:x_, y:y_});
+                             }
+                             }
+                             }
+                             refreshTile(x, y);
+                             checkNextStates();
+
+                             for (i = 0; i < changedTiles.length; i++) {
+                             redrawTile(changedTiles[i].x, changedTiles[i].y);
+                             }*/
+                            return;
+                        }
                     }
                 }
             }
@@ -616,6 +605,7 @@ function growTiles() {
         }
 
         var st = performance.now();
+        console.log("tiles", changedTiles.length);
         for (var i = 0; i < changedTiles.length; i++) {
             refreshTile(changedTiles[i].x, changedTiles[i].y);
             redrawTile(changedTiles[i].x, changedTiles[i].y);
@@ -624,23 +614,19 @@ function growTiles() {
 
         if (tileSizePerc < 100) {
             setTimeout(growTiles, tileSizePercSpeed - dt)
-        } else {
-            var cc = getCellsCount();
+        } else if(!online){
+            var cc = getCellsCount(gridTiles);
+            var endGame= '';
             if (cc.red == 0 && cc.blue == 0) {
-                gameString+='L';
-                alert("It's a draw!");
-                $("#playing").fadeOut();
-                $("#titlescreen").show();
+                endGame = 'L'
             } else if (cc.red == 0) {
-                gameString+='I';
-                alert("Blue won!");
-                $("#playing").fadeOut();
-                $("#titlescreen").show();
+                endGame ='I';
             } else if (cc.blue == 0) {
-                gameString+='F';
-                alert("Red won!");
-                $("#playing").fadeOut();
-                $("#titlescreen").show();
+                endGame='F';
+            }
+            if (endGame !== ''){
+                gameString += endGame
+                displayEndgame(endGame.charCodeAt(0)-70)
             }
         }
     }
@@ -666,21 +652,97 @@ $("#mainGame").bind('touchstart click', function (event) {
     mouseChangeMove(event);
 });
 
-$(window).keydown(function () {
-    if (tileSizePerc == 100 && moveFinished) {
-        gameOfLifeTick();
+$("#iterate").bind('touchstart click', function (event) {
+    if (!ending) {
+        if (tileSizePerc == 100 && moveFinished) {
+            gameOfLifeTick();
+        }
     }
 });
 
-$("#end").bind('touchstart click', function (event) {
-    if (tileSizePerc == 100 && moveFinished) {
-        gameOfLifeTick();
+$("#end").bind('toutchstart click', function (event) {
+    if (online) {var clr = THIS_PLAYER;}
+    else {var clr = currentPlayer;}
+    if (clr == 1) {
+        $("#end_screen").removeClass("blue");
+        $("#end_screen").addClass("red");
+    } else {
+        $("#end_screen").removeClass("red");
+        $("#end_screen").addClass("blue");
+    }
+    $("#end_screen").show();
+    ending = true;
+});
+$("#cancel_end").bind('toutchstart click', function (event) {
+    $("#end_screen").hide();
+    ending = false;
+});
+$("#resign_btn").bind('toutchstart click', function (event) {
+    if (online) {
+        socket.emit("endgame", "resign");//don't trust the client. ever.
+    }
+    else{
+        $("#end_screen").hide();
+
+        if (currentPlayer == 1) {
+            $("#win-message").text("Blue won!");
+            $("#win-dialog").removeClass("red");
+            $("#win-dialog").addClass("blue");
+        } else {
+            $("#win-message").text("Red won!");
+            $("#win-dialog").removeClass("blue");
+            $("#win-dialog").addClass("red");
+        }
+        $("#playing").fadeOut(function () {$("#winner").fadeIn();});
+        ending = false;
     }
 });
+$("#req_draw_btn").bind('toutchstart click', function (event) {
+    $("#end_screen").hide();
+    if (online) {
+        socket.emit("endgame", "offer_draw");
+        $("#please_wait").show();
+    } else {
+        $("#win-message").text("It's a draw");
+        $("#win-dialog").removeClass("blue");
+        $("#win-dialog").removeClass("red");
+
+        $("#playing").fadeOut(function () {
+            $("#winner").fadeIn();
+        });
+        ending = false;
+    }
+});
+$("#win-button").bind('tourchstart click', function (event) {
+    $("#winner").fadeOut(function () {
+        $("#titlescreen").fadeIn();
+        if(online){
+            window.location="..";
+        }
+    });
+});
+
 $("#playbtn").bind('touchstart click', function (event) {
     online = false;
     $("#playing").show();
     $("#winner").hide();
+
+    currentPlayer = 1;
+    moveStarted = false;
+    moveFinished = false;
+    creationTile = [];
+    stolenTiles = [];
+    origCol = 0;
+    moveNumber = {curr: [1,"A"], max: [1,"A"]};
+    gameEnd = true;
+
+    turnNumber = 1;
+
+    tileSizePerc = 100;
+    tileSizePercGrow = 5;
+    tileSizePercSpeed = 10;
+    changedTiles = [];
+
     $("#titlescreen").fadeOut(function () {setupGame();});
 });
 $("#onlnbtn").bind('touchstart click', function (event) {
@@ -690,6 +752,25 @@ $("#onlnbtn").bind('touchstart click', function (event) {
         window.alert("You are not online.");
     }
 });
+
+$("#accept_drw_btn").bind('touchstart click', function (event) {
+    if (online) {
+        socket.emit("endgame", "accept_draw", THIS_PLAYER);
+        $("#win-message").text("It's a draw");
+        $("#win-dialog").removeClass("red");
+        $("#win-dialog").removeClass("blue");
+
+        $("#playing").fadeOut(function () {
+            $("#winner").fadeIn();
+        });
+        ending = false;
+    }
+});
+$("#decline_drw_btn").bind('touchstart click', function (event) {
+    socket.emit("endgame", "decline_draw", THIS_PLAYER);
+    $("#accept_draw").hide();
+});
+
 $("#getbtn").bind('touchstart click', function (event) {
     if (gameString == ''){
         window.alert("There is no game.");
@@ -754,7 +835,6 @@ $().ready(function () {
         $("#playing").show();
         $("#winner").hide();
         $("#titlescreen").hide();
-        setupGame();
     }
 });
 
@@ -765,14 +845,15 @@ function requestMP(){
 }
 
 function playOut(moves){
-    if (moves.length!=0){
+    console.log(moves);
+    if (moves.length!=0 && moves[0] != ''){
         var move = moves[0];
         var type = move.slice(-1)[0];
         console.log(move)
         if (type=='E'){
-            moveStarted = true;
-            moveFinished = true;
-            gameOfLifeTick();//animations!
+            moveStarted = false;
+            moveFinished = false;
+            gameOfLifeTick(false);//animations!
         }else{
             var x = B20.indexOf(move[0]);
             var y = B20.indexOf(move[1]);
@@ -796,27 +877,35 @@ function playOut(moves){
     }
 }
 
+function sendName(name){
+    socket.emit("requestName",name);
+}
+
 function getEndgameMessage(endtype){
     var p1 = P1NAME;
     var p1s = P1NAME;
     var p1pos = P1NAME + "'s";
+    var p1toBe = 'was';
     var p2 = P2NAME;
     var p2s = P2NAME;
     var p2pos = P2NAME + "'s";
+    var p2toBe = 'was';
     if (THIS_PLAYER==1){//grammatical correctness is hard
         p1s = 'You';
         p1 = 'you';
         p1pos = 'your';
+        p1toBe = 'were'
     }else if(THIS_PLAYER==2){
         p2s = 'You';
-        p1 = 'you';
+        p2 = 'you';
         p2pos = 'your';
+        p2toBe = 'were';
     }
     switch(endtype){
-        case 0: return p2s+' was wiped out and '+p1+' won!';
+        case 0: return p2s+' '+p2toBe+' wiped out and '+p1+' won!';
         case 1: return p2s+' ran out of time and '+p1+' won!';
         case 2: return p2s+' resigned and '+p1+' won!';
-        case 3: return p1s+' was wiped out and '+p2+' won!';
+        case 3: return p1s+' '+p1toBe+' wiped out and '+p2+' won!';
         case 4: return p1s+' ran out of time and '+p2+' won!';
         case 5: return p1s+' resigned and '+p2+' won!';
         case 6: return 'Both populations were wiped out simultaneously.';
@@ -825,17 +914,28 @@ function getEndgameMessage(endtype){
     }
 }
 
+function displayEndgame(state){
+    console.log(state);
+    console.log(getEndgameMessage(state));
+    $("#win-message").text(getEndgameMessage(state));
+    $("#end_screen").show();
+    $("#playing").fadeOut(function () {$("#winner").fadeIn()});
+    ending = false;//should this be true?
+}
+
 if (online){
     socket.on('gameupdate', function (data){//update gamestring
-        if (!data.includes(gameString)||gameString===''){//new game
+        if (!data.includes(gameString) || gameString=='' || data==gameString){//new game
             var moves=data.split(",").slice(6);
             var movesMade = countItems(moves,'E');
-            currentPlayer = movesMade%2+1;
             gridTiles = remakeBoard(data);
             checkNextStates();
             drawAll();
+            console.log('yay')
         }else if(data.includes(gameString)){//play out moves
             var newMoves = data.replace(gameString,'');
+            console.log("gamestring", gameString);
+            console.log("data", data);
             playOut(newMoves.split(","));
         }
         gameString = data;
@@ -847,14 +947,6 @@ if (online){
     socket.on('beginMP', function (){
         setupGame();
     });
-    socket.on('gameEnd', function (data){
-        gameEnd = true;
-        gameString += data;
-        var type = data.charCodeAt(0)-70;//70=F
-        var message = getEndgameMessage(type);
-        window.alert(message);
-        
-    });
     socket.on('setName', function (player, name){
         switch(player){
             case 1:
@@ -865,5 +957,39 @@ if (online){
                 break;
         }
         drawText();
+    });
+    socket.on('setVars', function(vars, vals){
+        for (var i = 0; i<vars.length; i++){
+            window[vars[i]]=vals[i];
+            console.log(vars[i],window[vars[i]]);
+        }
+        drawAll();
+    });
+        
+    
+    socket.on('gameEnd', function(reason, winner) {
+        console.log("winner",winner);
+        if (winner == 1) {
+            $("#win-dialog").removeClass("blue");
+            $("#win-dialog").addClass("red");
+        } else if (winner == 2){
+            $("#win-dialog").removeClass("red");
+            $("#win-dialog").addClass("blue");
+        } else {
+            $("#win-dialog").removeClass("red");
+            $("#win-dialog").removeClass("blue");
+        }
+        if (reason == 'offer_draw') {
+            $("#accept_draw").show();
+            $("#end_screen").hide();
+        } else if (reason == 'decline_draw') {
+            $("#accept_draw").hide();
+            $("#end_screen").hide();
+            $("#please_wait").hide();
+        } else {
+            $("#accept_draw").hide();
+            var endGame = reason.charCodeAt(0)-70;
+            displayEndgame(endGame);
+        }
     });
 }
