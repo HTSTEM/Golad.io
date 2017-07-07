@@ -923,6 +923,18 @@ function displayEndgame(state){
     ending = false;//should this be true?
 }
 
+if (!Array.prototype.includes) {
+  Object.defineProperty(Array.prototype, "includes", {
+    enumerable: false,
+    value: function(obj) {
+        var newArr = this.filter(function(el) {
+          return el == obj;
+        });
+        return newArr.length > 0;
+      }
+  });
+}
+
 if (online){
     socket.on('gameupdate', function (data){//update gamestring
         if (!data.includes(gameString) || gameString=='' || data==gameString){//new game
