@@ -202,7 +202,7 @@ function checkNextStates() {
     }
 }
 
-function gameOfLifeTick(send=true) {
+function gameOfLifeTick(send) {
 
     turnNumber++;
     console.log(turnNumber);
@@ -251,10 +251,8 @@ function gameOfLifeTick(send=true) {
 
     tileSizePerc = 0;
     growTiles();
-    if (online){
-        if(send){
-            socket.emit('iterate','E')//send iterate message
-        }
+    if (online && send!==false){
+        socket.emit('iterate','E')//send iterate message
     }
     gameString+='E,';
 }
