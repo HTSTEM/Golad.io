@@ -860,7 +860,7 @@ function requestMP(){
 function playOut(moves){
     console.log(moves);
     if (moves.length!=0 && moves[0] != ''){
-        var move = moves[0];
+        var move = moves[0].split('+')[0];
         var type = move.slice(-1)[0];
         console.log(move)
         if (type=='E'){
@@ -873,17 +873,25 @@ function playOut(moves){
             if(type=='D'){
                 gridTiles[x][y].currentState = currentPlayer + 3;
                 creationTile = "[" + x + "," + y + "]";
-            }else if(type=='B' || type=='C'){
+                moveNumber.curr[1] = 'B';
+            }else if(type=='C'){
                 gridTiles[x][y].currentState = 0;
                 stolenTiles.push("[" + x + "," + y + "]");
+                moveNumber.curr[1] = 'D';
+            }else if(type=='B'){
+                gridTiles[x][y].currentState = 0;
+                stolenTiles.push("[" + x + "," + y + "]");
+                moveNumber.curr[1] = 'C';
             }else if(type=='A'){
                 gridTiles[x][y].currentState = 0;
                 creationTile = "[" + x + "," + y + "]";
+                moveNumber.curr[1] = 'B';
             }
             checkNextStates();
             checkNextStates();
             drawAll();
         }
+        moveNumber.max = moveNumber.curr;
         setTimeout(playOut,1000,moves.slice(1));//play next move after 1 second
     }else{
         drawAll();
@@ -936,23 +944,14 @@ function displayEndgame(state){
     ending = false;//should this be true?
 }
 
-if (!Array.prototype.includes) {
-  Object.defineProperty(Array.prototype, "includes", {
-    enumerable: false,
-    value: function(obj) {
-        var newArr = this.filter(function(el) {
-          return el == obj;
-        });
-        return newArr.length > 0;
-      }
-  });
-}
-
 if (online){
     socket.on('gameupdate', function (data){//update gamestring
+        var moves=data.split(",").slice(6);
+        var movesMade = moves.filter(function (moveStr){return moveStr.charAt(0)==='E';}).length;
+        console.log(movesMade);
+        moveNumber.curr[0] = moveNumber.max[0] = movesMade+1;
+        $("#turn").text(moveNumber.curr.join('') + " / " + moveNumber.max.join(''));
         if (!data.includes(gameString) || gameString=='' || data==gameString){//new game
-            var moves=data.split(",").slice(6);
-            var movesMade = countItems(moves,'E');
             gridTiles = remakeBoard(data);
             checkNextStates();
             drawAll();

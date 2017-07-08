@@ -98,18 +98,41 @@ function newSocket(namespace){
         });
         socket.on('iterate',function(data){
             var gameData = JSON.parse(fs.readFileSync('./games/'+path+'.json', 'utf8'));
+            var timePassed = (Date.now()-gameData.lastMoveTime)/1000;//do first so computing time doesn't count
             console.log(clientId+' iterate '+data);
             var legit = boardTools.checkLegit(gameData.gameString,gameData.board,player,data)
             console.log(legit);
             if(legit){
                 gameData.board = boardTools.doMoves(gameData.board, [data], gameData.rules, player);
+                gameData.gameString+='E'
+                switch(gameData.turn){
+                    case 1:
+                        gameData.p1Time += gameData.timeBonus-timePassed;
+                        break;
+                    case 2:
+                        gameData.p2Time += gameData.timeBonus-timePassed;
+                        break;
+                }
+                if(!gameData.keepTime){
+                    //gameData.gameString+='+'+Math.floor(gameData.p1Time)+'+'+Math.floor(gameData.p2Time);
+                    //I'll get this figured out eventually
+                }
+                gameData.gameString+=',';
                 gameData.turn= gameData.turn%2+1;
-                gameData.gameString+='E,';
                 console.log(gameData.gameString);
                 socket.broadcast.emit('gameupdate',gameData.gameString);
                 socket.broadcast.emit('setVars',["moveStarted","moveFinished","currentPlayer"],[false,false,gameData.turn]);
+                
                 var cc = boardTools.getCellsCount(gameData.board);
-                if (cc.red == 0 && cc.blue == 0) {
+                if (gameData.p2Time <= gameData.timeBonus && gameData.turn == 1){
+                    gameData.gameString+='G';
+                    console.log("Blue ran out of time!");
+                    nsp.emit("gameEnd",'G',0);
+                } else if (gameData.p1Time <= gameData.timeBonus && gameData.turn == 2){
+                    gameData.gameString+='J';
+                    console.log("Red ran out of time!");
+                    nsp.emit("gameEnd",'J',0);
+                } else if (cc.red == 0 && cc.blue == 0) {
                     gameData.gameString+='L';
                     console.log("It's a draw!");
                     nsp.emit("gameEnd",'L',0);
@@ -122,6 +145,8 @@ function newSocket(namespace){
                     console.log("Red won!");
                     nsp.emit("gameEnd",'F',1);
                 }
+                
+                gameData.lastMoveTime = Date.now();//put it last to (try to) balance out ping issues and stuff
                 fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
             }
         });
@@ -174,20 +199,28 @@ function newSocket(namespace){
                 socket.emit("gameupdate",gameData.gameString);
                 sendVariables(socket, gameData, clientId);
                 socket.emit('setVars',["currentPlayer","P1NAME","P2NAME"],[gameData.turn,gameData.p1[1],gameData.p2[1]]);
+                socket.emit('setTime',gameData.p1Time,gameData.p2Time);
             }else{
                 var board = boardTools.newBoard(density,size);
                 var rules = boardTools.parseRule(rule);
                 var gameString = rule+','+size+','+timelimit+','+timebonus+',0,'+boardTools.boardToString(board)+',';
+                var keepTime = timelimit!==99999;
                 var gameData = {
                     "p1":[clientId,"Player 1"],//get name later
                     "gameString":gameString,
                     "board":board,
                     "rules":rules,
                     "turn":1,
-                    "drawOffer":0
+                    "drawOffer":0,
+                    "p1Time":timelimit,
+                    "p2Time":timelimit,
+                    "timeBonus":timebonus,
+                    "lastMoveTime":Date.now(),
+                    "keepTime":keepTime
                 };
                 socket.emit('gameupdate',gameData.gameString);
                 socket.emit('setVars',["THIS_PLAYER"],[1]);
+                socket.emit('setTime',gameData.p1Time,gameData.p2Time);
                 console.log(gameData.gameString);
                 fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
                 games.push(path);
