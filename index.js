@@ -105,7 +105,7 @@ function newSocket(namespace){
             if(legit){
                 gameData.board = boardTools.doMoves(gameData.board, [data], gameData.rules, player);
                 gameData.gameString+='E'
-                if(!gameData.keepTime){
+                if(gameData.keepTime){
                     switch(gameData.turn){
                         case 1:
                             gameData.p1Time += gameData.timeBonus-timePassed;
@@ -115,7 +115,6 @@ function newSocket(namespace){
                             break;
                     }
                     gameData.gameString+='+'+Math.floor(gameData.p1Time)+'+'+Math.floor(gameData.p2Time);
-                    //I'll get this figured out eventually
                 }
                 gameData.gameString+=',';
                 gameData.turn= gameData.turn%2+1;
@@ -148,6 +147,29 @@ function newSocket(namespace){
                 
                 gameData.lastMoveTime = Date.now();//put it last to (try to) balance out ping issues and stuff
                 fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
+            }
+        });
+        
+        socket.on('checkTime',function(){
+            if(gameData.keepTime){
+                var timePassed = (Date.now()-gameData.lastMoveTime)/1000;
+                switch(gameData.turn){
+                    case 1:
+                        gameData.p1Time += gameData.timeBonus-timePassed;
+                        break;
+                    case 2:
+                        gameData.p2Time += gameData.timeBonus-timePassed;
+                        break;
+                }                
+                if (gameData.p2Time <= gameData.timeBonus){
+                    gameData.gameString+='G';
+                    console.log("Blue ran out of time!");
+                    nsp.emit("gameEnd",'G',0);
+                } else if (gameData.p1Time <= gameData.timeBonus){
+                    gameData.gameString+='J';
+                    console.log("Red ran out of time!");
+                    nsp.emit("gameEnd",'J',0);
+                } 
             }
         });
 
