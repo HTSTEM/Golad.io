@@ -62,6 +62,9 @@ var tileSizePercGrow = 5;
 var tileSizePercSpeed = 10;
 var changedTiles = [];
 
+var redTime = 99999;
+var blueTime = 99999;
+
 var ending = false; // Is user at the `end game` screen?
 
 var gameString = ''//20x20, no time limits, no time bonus, both humans
@@ -254,7 +257,11 @@ function gameOfLifeTick(send) {
     if (online && send!==false){
         socket.emit('iterate','E')//send iterate message
     }
-    gameString+='E,';
+    if (redTime == 99999 && blueTime == 99999){
+        gameString+='E,';
+    }else{
+        socket.emit('getGamestringTimes');
+    }
 }
 
 function getNeighbours(x, y) {
@@ -860,7 +867,12 @@ function requestMP(){
 function playOut(moves){
     console.log(moves);
     if (moves.length!=0 && moves[0] != ''){
-        var move = moves[0].split('+')[0];
+        var parts = moves[0].split('+');
+        var move = parts[0]
+        if (parts.length === 3){
+            redMoves = parseInt(parts[1]);
+            blueMoves = parseInt(parts[2]);
+        }
         var type = move.slice(-1)[0];
         console.log(move)
         if (type=='E'){
@@ -990,6 +1002,9 @@ if (online){
         drawAll();
     });
         
+    socket.on('setGamestringTimes', function(string){
+        gameString = string;
+    });
     
     socket.on('gameEnd', function(reason, winner) {
         console.log("winner",winner);

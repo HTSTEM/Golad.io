@@ -105,16 +105,16 @@ function newSocket(namespace){
             if(legit){
                 gameData.board = boardTools.doMoves(gameData.board, [data], gameData.rules, player);
                 gameData.gameString+='E'
-                switch(gameData.turn){
-                    case 1:
-                        gameData.p1Time += gameData.timeBonus-timePassed;
-                        break;
-                    case 2:
-                        gameData.p2Time += gameData.timeBonus-timePassed;
-                        break;
-                }
                 if(!gameData.keepTime){
-                    //gameData.gameString+='+'+Math.floor(gameData.p1Time)+'+'+Math.floor(gameData.p2Time);
+                    switch(gameData.turn){
+                        case 1:
+                            gameData.p1Time += gameData.timeBonus-timePassed;
+                            break;
+                        case 2:
+                            gameData.p2Time += gameData.timeBonus-timePassed;
+                            break;
+                    }
+                    gameData.gameString+='+'+Math.floor(gameData.p1Time)+'+'+Math.floor(gameData.p2Time);
                     //I'll get this figured out eventually
                 }
                 gameData.gameString+=',';
@@ -124,11 +124,11 @@ function newSocket(namespace){
                 socket.broadcast.emit('setVars',["moveStarted","moveFinished","currentPlayer"],[false,false,gameData.turn]);
                 
                 var cc = boardTools.getCellsCount(gameData.board);
-                if (gameData.p2Time <= gameData.timeBonus && gameData.turn == 1){
+                if (gameData.p2Time <= gameData.timeBonus && gameData.turn == 1 && gameData.keepTime){
                     gameData.gameString+='G';
                     console.log("Blue ran out of time!");
                     nsp.emit("gameEnd",'G',0);
-                } else if (gameData.p1Time <= gameData.timeBonus && gameData.turn == 2){
+                } else if (gameData.p1Time <= gameData.timeBonus && gameData.turn == 2 && gameData.keepTime){
                     gameData.gameString+='J';
                     console.log("Red ran out of time!");
                     nsp.emit("gameEnd",'J',0);
@@ -242,6 +242,10 @@ function newSocket(namespace){
                 nsp.emit("setName", 2, name);
             }
             fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));
+        });
+        socket.on('getGamestringTimes', function(){
+             var gameData = JSON.parse(fs.readFileSync('./games/'+path+'.json', 'utf8'));
+             socket.emit("setGamestringTimes",gameData.gameString);
         });
         socket.on('disconnect', function() {
             console.log(clientId, "Disconnected")
