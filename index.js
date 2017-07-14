@@ -259,7 +259,8 @@ function sendVariables(socket, gameData, clientId){
     var moveStarted = true;
     var moveFinished = false;
     var player = 0;
-    var lasttype = gameData.gameString.slice(-2)[0];
+    var lastmove = gameData.gameString.split(",").slice(-1)[0];
+    var lasttype = lastmove.charAt(0);
     if (lasttype == 'E' || 
       gameData.gameString.split(",")[6]=='' || 
       gameData.gameString.split(",")[6]==undefined){
