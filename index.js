@@ -213,8 +213,8 @@ function newSocket(namespace){
             if (games.includes(path)){
                 var json = fs.readFileSync('./games/'+path+'.json', 'utf8');
                 var gameData = JSON.parse(json);
-                if(gameData.p1[0]!=clientId && gameData.p2 == undefined){
-                    gameData.p2 = [clientId,"Player 2"];//get name later or smthn
+                if(gameData.p1[0]!=clientId && gameData.p2[0] == undefined){
+                    gameData.p2[0] = clientId;//get name later or smthn
                 }
                 fs.writeFileSync('./games/'+path+'.json',JSON.stringify(gameData));//async file write breaks things
                 console.log(gameData.gameString);
@@ -229,6 +229,7 @@ function newSocket(namespace){
                 var keepTime = timelimit!==99999;
                 var gameData = {
                     "p1":[clientId,"Player 1"],//get name later
+                    "p2":[undefined,"Player 2"],
                     "gameString":gameString,
                     "board":board,
                     "rules":rules,
