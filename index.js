@@ -283,7 +283,10 @@ function sendVariables(socket, gameData, clientId){
     var moveFinished = false;
     var player = 0;
     var lastmove = gameData.gameString.split(",").slice(-1)[0];
-    var lasttype = lastmove.charAt(0);
+    if (lastmove == ""){
+        lastmove = gameData.gameString.split(",").slice(-2)[0];
+    }
+    var lasttype = lastmove.split("+")[0].slice(-1)[0]
     if (lasttype == 'E' || 
       gameData.gameString.split(",")[6]=='' || 
       gameData.gameString.split(",")[6]==undefined){
@@ -296,6 +299,7 @@ function sendVariables(socket, gameData, clientId){
     }else if(clientId == gameData.p2[0]){
         player = 2;
     }
+    console.log(moveFinished)
     socket.emit('setVars',["moveStarted","moveFinished","THIS_PLAYER"],[moveStarted,moveFinished,player]);
 }
 
