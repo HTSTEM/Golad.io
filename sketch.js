@@ -653,7 +653,7 @@ $(window).resize(function () {
     canvas.height = getCH();
     $("#gameCanvas").offset($("#mainGame").position());
 
-    if (!(gameString === '') {
+    if (!(gameString === '')) {
         drawAll();
     }
 });
