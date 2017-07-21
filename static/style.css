@@ -198,7 +198,7 @@ html, body {
     float: right;
     width: 50vw;
     height: 100vh;
-    background-color: #262626;
+    /*background-color: #262626;*/
     color: #FFF;
     text-align: center;
 }
