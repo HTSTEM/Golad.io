@@ -26,7 +26,7 @@ var BLUE = "#0066ff"; //"#30A7C2";
 var DARK_BLUE = "#26869B";
 var GREY = "#262626"; //"#333333";
 var BLACK = "#000000"; //"#222222";
-var WHITE = "#ffffff"
+var WHITE = "#ffffff";
 var FANCY_MIDDLE = true;
 
 var BIRTH_COUNT = [3];
@@ -67,7 +67,7 @@ var blueTime = 99999;
 
 var ending = false; // Is user at the `end game` screen?
 
-var gameString = ''//20x20, no time limits, no time bonus, both humans
+var gameString = ''; //20x20, no time limits, no time bonus, both humans
 
 function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
     if (typeof stroke == 'undefined') {
@@ -652,7 +652,10 @@ $(window).resize(function () {
     canvas.width = getCW();
     canvas.height = getCH();
     $("#gameCanvas").offset($("#mainGame").position());
-    drawAll();
+
+    if (gameString) {  // TODO: If game is on screen
+        drawAll();
+    }
 });
 
 $("#mainGame").bind('touchstart click', function (event) {
@@ -803,9 +806,7 @@ $("#rsmbtn").bind('touchstart click', function (event) {
 function setupGame () {
     $("#playing").show();
     $("#winner").hide();
-    $("#titlescreen").hide;
-    canvas = document.getElementById("gameCanvas");
-    ctx = canvas.getContext("2d");
+
     $("#gameCanvas").offset($("#mainGame").position());
 
     canvas.width = getCW();
@@ -847,6 +848,9 @@ function makeString(){//I don't think we need this. Keep it for now.
 
 
 $().ready(function () {
+    canvas = document.getElementById("gameCanvas");
+    ctx = canvas.getContext("2d");
+
     if (window.location.href.split('/').slice(-1)[0]=='' || !online){
         $("#playing").hide();
         $("#winner").hide();
