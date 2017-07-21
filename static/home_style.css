@@ -54,17 +54,12 @@ html, body {
     left: 2%;
 }
 .btntxt {
-    font-size: 4vmax;
-    line-height: 4vmax;
+    line-height: initial;
     position: absolute;
     top: 50%;
     left: 50%;
     width: 100%;
     transform: translate(-50%, -50%);
-}
-.btntxt-big {
-    font-size: 6vmax;
-    line-height: 6vmax;
 }
 #lhs {
     float: left;
@@ -103,13 +98,10 @@ html, body {
 }
 
 .row {
-    height: 16.666vh;
+    height: 25vh;
     line-height: 0;
     width: 100%;
     display: inline-block;
-}
-.row-tall {
-    height: 33.333vh;
 }
 
 

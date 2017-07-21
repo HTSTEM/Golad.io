@@ -854,7 +854,11 @@ function makeString(){//I don't think we need this. Keep it for now.
 
 
 $().ready(function () {
-    $("body").fadeIn(1000);
+
+    $(".btntxt").hide();
+    $("body").fadeIn(1000, function () {$(".btntxt").fadeIn();$(".btntxt").fitText();});
+
+
 
     canvas = document.getElementById("gameCanvas");
     ctx = canvas.getContext("2d");
