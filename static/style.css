@@ -93,8 +93,8 @@ html, body {
     -webkit-transition:background-color .2s ease-in-out;
 }
 .locked {
-    background-color: #a6a6a6;
-    color: #555;
+    background-color: #a6a6a6 !important;
+    color: #555 !important;
 }
 #player1-type {
     display: inline-block;

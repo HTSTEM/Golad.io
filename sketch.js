@@ -805,9 +805,7 @@ $("#menu").bind('touchstart click', function (event) {
 });
 
 $("#rsmbtn").bind('touchstart click', function (event) {
-    if (gameString === ''){
-        alert("There is no game")
-    }else{
+    if (!(gameString === '')){
         $("#titlescreen").fadeOut(function () {$("#playing").fadeIn()});
     }
 });
@@ -857,6 +855,14 @@ function makeString(){//I don't think we need this. Keep it for now.
 }
 
 function animateTS() {
+    if (gameString === '') {
+        $("#rsmbtn>.btninner").addClass("locked");
+        console.log("add");
+    } else {
+        $("#rsmbtn>.btninner").removeClass("locked");
+        console.log("remove");
+    }
+
     $("#rhs").hide();
     $("body").fadeIn(1000, function () {
         // Fade in UI
