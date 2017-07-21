@@ -759,7 +759,7 @@ $("#playbtn").bind('touchstart click', function (event) {
     tileSizePercSpeed = 10;
     changedTiles = [];
 
-    $("#titlescreen").fadeOut(function () {setupGame();});
+    $("#titlescreen").fadeOut(function () {setupGame();$("#choose-mode").hide()});
 });
 $("#onlnbtn").bind('touchstart click', function (event) {
     if(online){
@@ -798,7 +798,10 @@ $("#getbtn").bind('touchstart click', function (event) {
 });
 
 $("#menu").bind('touchstart click', function (event) {
-    $("#playing").fadeOut(function () {$("#titlescreen").fadeIn()});
+    $("#playing").fadeOut(function () {
+        $("#titlescreen").fadeIn();
+        animateTS();
+    });
 });
 
 $("#rsmbtn").bind('touchstart click', function (event) {
@@ -810,7 +813,8 @@ $("#rsmbtn").bind('touchstart click', function (event) {
 });
 
 function setupGame () {
-    $("#playing").show();
+    $("#playing").hide();
+    $("#playing").fadeIn(1000);
     $("#winner").hide();
 
     $("#gameCanvas").offset($("#mainGame").position());
@@ -852,12 +856,11 @@ function makeString(){//I don't think we need this. Keep it for now.
     return string
 }
 
-
-$().ready(function () {
-
+function animateTS() {
     $("#rhs").hide();
     $("body").fadeIn(1000, function () {
         // Fade in UI
+
         $("#rhs").show();
         $("#rhs").css({height: 0, opacity: 0.5});
         $("#rhs").animate({
@@ -865,14 +868,13 @@ $().ready(function () {
             opacity: 1
         }, 1000);
 
-
-
-
-
         $(".btntxt").fitText();
     });
+}
 
+$().ready(function () {
 
+    animateTS();
 
     canvas = document.getElementById("gameCanvas");
     ctx = canvas.getContext("2d");

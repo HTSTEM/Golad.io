@@ -129,8 +129,8 @@ html, body {
     }
 
     .row {
-        height: 16.666vh;
-        line-height: 16.666vh;
+        height: 25vh;
+        line-height: initial;
         width: 50%;
     }
     .half {
