@@ -653,7 +653,7 @@ $(window).resize(function () {
     canvas.height = getCH();
     $("#gameCanvas").offset($("#mainGame").position());
 
-    if (gameString) {  // TODO: If game is on screen
+    if (!(gameString === '') {
         drawAll();
     }
 });
@@ -789,7 +789,7 @@ $("#decline_drw_btn").bind('touchstart click', function (event) {
 
 $("#getbtn").bind('touchstart click', function (event) {
     if (gameString == ''){
-        window.alert("There is no game.");
+        //window.alert("There is no game.");
     }else if (gameString.slice(-1)[0]==","){
         window.prompt("Here's the gamestring!",gameString.slice(0,-1));
     }else{
@@ -857,9 +857,11 @@ function makeString(){//I don't think we need this. Keep it for now.
 function animateTS() {
     if (gameString === '') {
         $("#rsmbtn>.btninner").addClass("locked");
+        $("#getbtn>.btninner").addClass("locked");
         console.log("add");
     } else {
         $("#rsmbtn>.btninner").removeClass("locked");
+        $("#getbtn>.btninner").removeClass("locked");
         console.log("remove");
     }
 
