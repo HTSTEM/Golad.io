@@ -855,8 +855,22 @@ function makeString(){//I don't think we need this. Keep it for now.
 
 $().ready(function () {
 
-    $(".btntxt").hide();
-    $("body").fadeIn(1000, function () {$(".btntxt").fadeIn();$(".btntxt").fitText();});
+    $("#rhs").hide();
+    $("body").fadeIn(1000, function () {
+        // Fade in UI
+        $("#rhs").show();
+        $("#rhs").css({height: 0, opacity: 0.5});
+        $("#rhs").animate({
+            height : '100vh',
+            opacity: 1
+        }, 1000);
+
+
+
+
+
+        $(".btntxt").fitText();
+    });
 
 
 
