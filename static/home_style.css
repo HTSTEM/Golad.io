@@ -61,6 +61,10 @@ html, body {
     width: 100%;
     transform: translate(-50%, -50%);
 }
+.btntxt-big {
+    font-size: 6vmax;
+    line-height: 6vmax;
+}
 #lhs {
     float: left;
     width: 48.5vw;
@@ -103,6 +107,23 @@ html, body {
     width: 100%;
     display: inline-block;
 }
+.row-tall {
+    height: 33.333vh;
+}
+
+
+#choose-mode {
+    width: 100%;
+    height: 60%;
+    position: absolute;
+    top: 15%;
+    left: 0;
+    border-radius: 5px;
+    border: 2px solid #000;
+    box-sizing: border-box;
+}
+
+
 
 @media (orientation: portrait) {
     #lhs {

@@ -670,6 +670,12 @@ $("#iterate").bind('touchstart click', function (event) {
     }
 });
 
+$("#cm-back").bind('toutchstart click', function (event) {
+    $("#choose-mode").fadeOut();
+});
+$("#play").bind('toutchstart click', function (event) {
+    $("#choose-mode").fadeIn();
+});
 $("#end").bind('toutchstart click', function (event) {
     if (online) {var clr = THIS_PLAYER;}
     else {var clr = currentPlayer;}
@@ -848,6 +854,8 @@ function makeString(){//I don't think we need this. Keep it for now.
 
 
 $().ready(function () {
+    $("body").fadeIn(1000);
+
     canvas = document.getElementById("gameCanvas");
     ctx = canvas.getContext("2d");
 
@@ -982,7 +990,9 @@ if (online){
         console.log(gameString);
     });
     socket.on('redirect', function (data){
-        window.location.href = data;
+        $("body").fadeOut(500, function () {
+            window.location.href = data;
+        });
     });
     socket.on('beginMP', function (){
         setupGame();
