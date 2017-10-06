@@ -261,11 +261,11 @@ html, body {
     vertical-align: middle;
     border-radius: 2px;
 }
-.red {
+#titlescreen .red, #winner .red, #playing .red, .red {
     background-color: #d60000;
     color: #000;
 }
-.blue {
+#titlescreen .blue, #winner .blue, #playing .blue, .blue {
     background-color: #0055d6;
     color: #fff;
 }
